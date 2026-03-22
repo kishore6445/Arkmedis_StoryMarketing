@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { CheckCircle2, Circle, Calendar, Zap, Clock, AlertCircle, Edit2, X, Loader2, LayoutGrid, Plus, User, Users } from "lucide-react"
+import { CheckCircle2, Circle, Calendar, Zap, Clock, AlertCircle, Edit2, X, Loader2, LayoutGrid, Plus, User, Users, Paperclip } from "lucide-react"
 import useSWR from "swr"
 import { TaskKanban } from "./task-kanban"
 import { SprintToolbarUnified } from "./sprint-toolbar-unified"
@@ -101,6 +101,8 @@ export function MyTasksToday() {
     promisedDate: "",
     promisedTime: "",
     assigneeId: "",
+    attachment: null as File | null,
+    attachmentName: "",
   })
 
   const clients = clientsData?.clients || []
@@ -366,6 +368,84 @@ export function MyTasksToday() {
         alert(`Task creation failed: ${data.error || "Unknown error"}`)
         return
       }
+      const normalizeTaskId = (value: unknown): string => {
+        if (value == null) return ""
+
+        if (typeof value === "string" || typeof value === "number" || typeof value === "bigint") {
+          return String(value).trim()
+        }
+
+        if (Array.isArray(value)) {
+          for (const entry of value) {
+            const normalized = normalizeTaskId(entry)
+            if (normalized) return normalized
+          }
+          return ""
+        }
+
+        if (typeof value === "object") {
+          const maybeRecord = value as Record<string, unknown>
+          return (
+            normalizeTaskId(maybeRecord.id) ||
+            normalizeTaskId(maybeRecord.task_id) ||
+            normalizeTaskId(maybeRecord.taskId) ||
+            ""
+          )
+        }
+
+        return ""
+      }
+
+      const createdTaskId = normalizeTaskId(
+        data?.task ?? data?.id ?? data?.taskId ?? null
+      )
+      console.log("[v0] Normalized created task ID:", createdTaskId)
+      const hasValidTaskId = Boolean(createdTaskId && createdTaskId !== "undefined" && createdTaskId !== "null")
+      console.log("[v0] Valid task ID check:", { createdTaskId, hasValidTaskId })
+      // Upload selected attachment after task is created.
+      // debugger;
+      if (createFormData.attachment) {
+        if (!hasValidTaskId) {
+          console.error("[v0] Missing valid task ID in create response:", data)
+          alert("Task created, but attachment could not be uploaded because task ID was missing")
+        } else {
+        const fileData = new FormData()
+        fileData.append("file", createFormData.attachment)
+
+       console.log(fileData)
+        console.log("createdTaskId", createdTaskId)
+console.log("selected attachment", createFormData.attachment)
+console.log("formData file", fileData.get("file"))
+console.log("formData entries", Array.from(fileData.entries()))
+       // debugger;
+
+ console.log("fileData is", fileData);
+
+
+// console.log("[v0] saving file metadata:", {
+//   task_id: taskId,
+//   name: file.name,
+//   url: urlData.publicUrl,
+//   size: file.size,
+//   mime_type: file.type,
+//   uploaded_by: session.id,
+// })
+        const uploadRes = await fetch(`/api/tasks/${createdTaskId}/files`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: fileData,
+        })
+
+        if (!uploadRes.ok) {
+          const uploadError = await uploadRes.json().catch(() => ({}))
+          console.error("[v0] Task attachment upload failed:", uploadError)
+          alert(uploadError?.error || "Task created, but attachment upload failed")
+        }
+        }
+      }
+
       setShowCreateModal(false)
       setCreateFormData({
         title: "",
@@ -379,6 +459,8 @@ export function MyTasksToday() {
         promisedDate: "",
         promisedTime: "",
         assigneeId: "",
+        attachment: null,
+        attachmentName: "",
       })
       console.log("[v0] Task created successfully, revalidating data")
       mutate()
@@ -696,7 +778,55 @@ export function MyTasksToday() {
                 <p className="type-caption text-[#86868B] italic">Default: 9:00 AM - client-facing commitment</p>
               </div>
 
-              {/* Section 6: Buffer Info */}
+              {/* Section 6: Attachment */}
+              <div className="space-y-3">
+                <div className="type-caption text-[#6B7280] uppercase tracking-wider font-semibold">Attachment</div>
+                <div>
+                  <label className="type-body font-medium text-[#1D1D1F] block mb-2">Upload File (Optional)</label>
+                  <div className="flex gap-2">
+                    <label className="flex-1 flex items-center justify-center px-4 py-2.5 border border-[#E5E5E7] rounded-lg hover:bg-[#F5F5F7] cursor-pointer transition-all bg-white">
+                      <Paperclip className="w-4 h-4 text-[#86868B] mr-2" />
+                      <span className="text-sm text-[#86868B] truncate">
+                        {createFormData.attachmentName || "Choose file"}
+                      </span>
+                      <input
+                        type="file"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            setCreateFormData({
+                              ...createFormData,
+                              attachment: file,
+                              attachmentName: file.name,
+                            })
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                    {createFormData.attachment && (
+                      <button
+                        onClick={() =>
+                          setCreateFormData({
+                            ...createFormData,
+                            attachment: null,
+                            attachmentName: "",
+                          })
+                        }
+                        className="px-3 py-2 hover:bg-[#F5F5F7] rounded-lg transition-all"
+                        type="button"
+                      >
+                        <X className="w-4 h-4 text-[#86868B]" />
+                      </button>
+                    )}
+                  </div>
+                  {createFormData.attachment && (
+                    <p className="text-xs text-[#86868B] mt-2">File: {createFormData.attachmentName}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Section 7: Buffer Info */}
               {createFormData.dueDate && createFormData.promisedDate && (
                 <div className={cn(
                   "flex items-start gap-3 p-4 rounded-xl type-body",
