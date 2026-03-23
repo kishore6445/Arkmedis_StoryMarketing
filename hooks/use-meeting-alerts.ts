@@ -1,89 +1,39 @@
-'use client'
-
-import { useState, useEffect, useCallback } from 'react'
-import useSWR from 'swr'
-
-interface Meeting {
-  id: string
-  title: string
-  date: string
-  time: string
-  attendees?: any[]
-  status?: string
-  [key: string]: any
-}
-
-interface MeetingGroup {
-  status: string
-  label: string
-  count: number
-  meetings: Meeting[]
-}
-
-interface MeetingsSummary {
-  totalMeetings: number
-  totalAttendees: number
-}
+import { useState, useEffect } from 'react';
+import useSWR from 'swr';
 
 const fetcher = async (url: string) => {
-  try {
-    const token = localStorage.getItem('sessionToken') || ''
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      console.error('[v0] Meeting API error:', error)
-      throw new Error(error.error || 'Failed to fetch meetings')
-    }
-
-    const data = await response.json()
-    console.log('[v0] Fetched meetings:', data)
-    return data
-  } catch (err) {
-    console.error('[v0] Fetcher error:', err)
-    throw err
+  const response = await fetch(url);
+  if (!response.ok) {
+    const error = new Error('Failed to fetch meetings');
+    throw error;
   }
-}
+  return response.json();
+};
 
 export function useMeetingAlerts() {
-  const [meetings, setMeetings] = useState<MeetingGroup[] | undefined>()
-  const [summary, setSummary] = useState<MeetingsSummary | undefined>()
+  const [meetings, setMeetings] = useState<any[]>([]);
+  const [summary, setSummary] = useState<any>(null);
 
-  // Fetch today's meetings every 30 seconds
   const { data, error, isLoading } = useSWR(
     '/api/meetings/today',
     fetcher,
     {
       revalidateOnFocus: false,
-      refreshInterval: 30000, // Refresh every 30 seconds
+      refreshInterval: 30000,
     }
-  )
+  );
 
-  // Process fetched data
   useEffect(() => {
     if (data) {
-      console.log('[v0] Processing meeting data:', data)
-      setMeetings(data.groups || [])
-      setSummary(data.summary || { totalMeetings: 0, totalAttendees: 0 })
+      setMeetings(data.groups || []);
+      setSummary(data.summary || { totalMeetings: 0, totalAttendees: 0 });
     }
-  }, [data])
-
-  // Log errors
-  useEffect(() => {
-    if (error) {
-      console.error('[v0] Meeting alerts hook error:', error.message)
-    }
-  }, [error])
+  }, [data]);
 
   return {
     meetings,
     summary,
     isLoading,
-    error
-  }
+    error,
+  };
 }
