@@ -1,127 +1,134 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
-import { TodaysMeetingGroup, MeetingWithAttendees } from '@/lib/types/meeting-alerts';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+interface MeetingWithAttendees {
+  id: string;
+  title?: string;
+  client_id?: string;
+  date: string;
+  time: string;
+  attendees: Array<{ id: string; full_name: string; email: string }>;
+  status: string;
+  meeting_date?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface TodaysMeetingGroup {
+  status: 'happening_now' | 'today' | 'later';
+  label: string;
+  meetings: MeetingWithAttendees[];
+  count: number;
+}
+
 export async function GET(request: NextRequest) {
   try {
-    // Get current user ID from headers
-    const userId = request.headers.get('x-user-id');
-    if (!userId) {
+    // Get user from Authorization header
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('[v0] No authorization header provided for meetings/today');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const token = authHeader.substring(7);
+    
+    // Verify token and get user
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      console.error('[v0] Auth error:', authError);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    console.log('[v0] Fetching today\'s meetings for user:', user.id);
+
+    // Get today's date
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const todayString = today.toISOString().split('T')[0];
 
-    // Fetch today's meetings where user is organizer or attendee
+    // Fetch meetings for today
     const { data: meetings, error: meetingsError } = await supabase
-      .from('meetings')
+      .from('meeting_notes')
       .select(`
-        *,
-        meeting_attendees (
-          id,
-          user_id,
-          rsvp_status,
-          created_at,
-          updated_at
-        )
+        id,
+        title,
+        client_id,
+        meeting_date,
+        attendees,
+        notes,
+        created_by,
+        created_at,
+        updated_at,
+        status
       `)
-      .eq('status', 'scheduled')
-      .gte('start_time', today.toISOString())
-      .lt('start_time', tomorrow.toISOString())
-      .or(`organizer_id.eq.${userId},meeting_attendees.user_id.eq.${userId}`)
-      .order('start_time', { ascending: true });
+      .eq('meeting_date', todayString)
+      .order('created_at', { ascending: true });
 
     if (meetingsError) {
-      console.error('Error fetching meetings:', meetingsError);
+      console.error('[v0] Error fetching meetings:', meetingsError);
       return NextResponse.json({ error: meetingsError.message }, { status: 500 });
     }
 
-    const now = new Date();
-    const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
-    const sixHoursFromNow = new Date(now.getTime() + 6 * 60 * 60 * 1000);
+    console.log('[v0] Found today\'s meetings:', meetings?.length || 0);
 
-    // Group meetings by status
-    const happeningNow: MeetingWithAttendees[] = [];
-    const todayUpcoming: MeetingWithAttendees[] = [];
-    const upcoming: MeetingWithAttendees[] = [];
-
-    meetings?.forEach((meeting: any) => {
-      const startTime = new Date(meeting.start_time);
-      const endTime = new Date(meeting.end_time);
-      
-      const meetingWithAttendees: MeetingWithAttendees = {
-        ...meeting,
-        attendees: meeting.meeting_attendees || [],
-        attendee_count: meeting.meeting_attendees?.length || 0,
-        confirmed_count: meeting.meeting_attendees?.filter((a: any) => a.rsvp_status === 'confirmed').length || 0
-      };
-
-      if (now >= startTime && now <= endTime) {
-        happeningNow.push(meetingWithAttendees);
-      } else if (startTime <= sixHoursFromNow) {
-        todayUpcoming.push(meetingWithAttendees);
-      } else {
-        upcoming.push(meetingWithAttendees);
-      }
-    });
-
-    const groupedMeetings: TodaysMeetingGroup[] = [];
-
-    if (happeningNow.length > 0) {
-      groupedMeetings.push({
-        status: 'happening_now',
-        label: 'Happening Now',
-        meetings: happeningNow,
-        count: happeningNow.length
+    // If no meetings found from meeting_notes, try to fetch from any meetings table
+    if (!meetings || meetings.length === 0) {
+      return NextResponse.json({
+        groups: [],
+        summary: {
+          totalMeetings: 0,
+          totalAttendees: 0,
+          totalHours: 0
+        }
       });
     }
 
-    if (todayUpcoming.length > 0) {
-      groupedMeetings.push({
+    // Transform meeting_notes to meeting format with estimated times
+    const transformedMeetings: MeetingWithAttendees[] = meetings.map((m: any) => ({
+      id: m.id,
+      title: m.title,
+      client_id: m.client_id,
+      date: m.meeting_date,
+      time: '10:00', // Default time if not specified
+      attendees: Array.isArray(m.attendees) ? m.attendees.map((name: string) => ({
+        id: '',
+        full_name: name,
+        email: ''
+      })) : [],
+      status: m.status || 'scheduled'
+    }));
+
+    // For now, group all as 'today' since they're all scheduled for today
+    const groups: TodaysMeetingGroup[] = [];
+    
+    if (transformedMeetings.length > 0) {
+      groups.push({
         status: 'today',
-        label: 'Today - Upcoming',
-        meetings: todayUpcoming,
-        count: todayUpcoming.length
+        label: 'Today\'s Meetings',
+        meetings: transformedMeetings,
+        count: transformedMeetings.length
       });
     }
 
-    if (upcoming.length > 0) {
-      groupedMeetings.push({
-        status: 'upcoming',
-        label: 'Later Today',
-        meetings: upcoming,
-        count: upcoming.length
-      });
-    }
-
-    const totalMeetings = happeningNow.length + todayUpcoming.length + upcoming.length;
-    const totalAttendees = meetings?.reduce((sum: number, m: any) => sum + (m.meeting_attendees?.length || 0), 0) || 0;
-    const totalDuration = meetings?.reduce((sum: number, m: any) => {
-      const start = new Date(m.start_time);
-      const end = new Date(m.end_time);
-      return sum + ((end.getTime() - start.getTime()) / (1000 * 60 * 60));
-    }, 0) || 0;
+    const totalAttendees = transformedMeetings.reduce((sum, m) => sum + m.attendees.length, 0);
 
     return NextResponse.json({
-      grouped: groupedMeetings,
+      groups,
       summary: {
-        totalMeetings,
+        totalMeetings: transformedMeetings.length,
         totalAttendees,
-        totalHours: Math.round(totalDuration * 10) / 10,
-        today
+        totalHours: transformedMeetings.length * 0.5 // Estimate 30 min per meeting
       }
     });
 
   } catch (error) {
-    console.error('Error in /api/meetings/today:', error);
+    console.error('[v0] Error in meetings/today:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

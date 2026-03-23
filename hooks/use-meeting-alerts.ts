@@ -3,13 +3,23 @@ import { TodaysMeetingGroup, MeetingWithAttendees } from '@/lib/types/meeting-al
 import useSWR from 'swr';
 
 const fetcher = async (url: string) => {
+  const token = localStorage.getItem('sessionToken') || '';
   const response = await fetch(url, {
     headers: {
-      'x-user-id': localStorage.getItem('user_id') || ''
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
     }
   });
-  if (!response.ok) throw new Error('Failed to fetch');
-  return response.json();
+  
+  if (!response.ok) {
+    const error = await response.json();
+    console.error('[v0] Meeting API error:', error);
+    throw new Error(error.error || 'Failed to fetch meetings');
+  }
+  
+  const data = await response.json();
+  console.log('[v0] Fetched meetings:', data);
+  return data;
 };
 
 export function useMeetingAlerts() {
@@ -25,6 +35,13 @@ export function useMeetingAlerts() {
       refreshInterval: 30000, // Refresh every 30 seconds
     }
   );
+
+  // Log errors
+  useEffect(() => {
+    if (error) {
+      console.error('[v0] Meeting alerts error:', error.message);
+    }
+  }, [error]);
 
   // Load dismissed and snoozed alerts from localStorage
   useEffect(() => {
