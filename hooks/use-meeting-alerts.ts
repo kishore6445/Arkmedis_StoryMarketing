@@ -1,146 +1,89 @@
-import { useState, useEffect, useCallback } from 'react';
-import { TodaysMeetingGroup, MeetingWithAttendees } from '@/lib/types/meeting-alerts';
-import useSWR from 'swr';
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import useSWR from 'swr'
+
+interface Meeting {
+  id: string
+  title: string
+  date: string
+  time: string
+  attendees?: any[]
+  status?: string
+  [key: string]: any
+}
+
+interface MeetingGroup {
+  status: string
+  label: string
+  count: number
+  meetings: Meeting[]
+}
+
+interface MeetingsSummary {
+  totalMeetings: number
+  totalAttendees: number
+}
 
 const fetcher = async (url: string) => {
-  const token = localStorage.getItem('sessionToken') || '';
-  const response = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
+  try {
+    const token = localStorage.getItem('sessionToken') || ''
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      console.error('[v0] Meeting API error:', error)
+      throw new Error(error.error || 'Failed to fetch meetings')
     }
-  });
-  
-  if (!response.ok) {
-    const error = await response.json();
-    console.error('[v0] Meeting API error:', error);
-    throw new Error(error.error || 'Failed to fetch meetings');
+
+    const data = await response.json()
+    console.log('[v0] Fetched meetings:', data)
+    return data
+  } catch (err) {
+    console.error('[v0] Fetcher error:', err)
+    throw err
   }
-  
-  const data = await response.json();
-  console.log('[v0] Fetched meetings:', data);
-  return data;
-};
+}
 
 export function useMeetingAlerts() {
-  const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
-  const [snoozedAlerts, setSnoozedAlerts] = useState<Map<string, Date>>(new Map());
+  const [meetings, setMeetings] = useState<MeetingGroup[] | undefined>()
+  const [summary, setSummary] = useState<MeetingsSummary | undefined>()
 
   // Fetch today's meetings every 30 seconds
-  const { data, error, isLoading, mutate } = useSWR(
+  const { data, error, isLoading } = useSWR(
     '/api/meetings/today',
     fetcher,
     {
       revalidateOnFocus: false,
       refreshInterval: 30000, // Refresh every 30 seconds
     }
-  );
+  )
+
+  // Process fetched data
+  useEffect(() => {
+    if (data) {
+      console.log('[v0] Processing meeting data:', data)
+      setMeetings(data.groups || [])
+      setSummary(data.summary || { totalMeetings: 0, totalAttendees: 0 })
+    }
+  }, [data])
 
   // Log errors
   useEffect(() => {
     if (error) {
-      console.error('[v0] Meeting alerts error:', error.message);
+      console.error('[v0] Meeting alerts hook error:', error.message)
     }
-  }, [error]);
-
-  // Load dismissed and snoozed alerts from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem('meeting_alerts_dismissed');
-    if (stored) {
-      setDismissedAlerts(new Set(JSON.parse(stored)));
-    }
-
-    const storedSnoozed = localStorage.getItem('meeting_alerts_snoozed');
-    if (storedSnoozed) {
-      const entries = JSON.parse(storedSnoozed);
-      const map = new Map(entries);
-      setSnoozedAlerts(map);
-    }
-  }, []);
-
-  // Save dismissed alerts to localStorage
-  const dismissAlert = useCallback((meetingId: string) => {
-    const newDismissed = new Set(dismissedAlerts);
-    newDismissed.add(meetingId);
-    setDismissedAlerts(newDismissed);
-    localStorage.setItem('meeting_alerts_dismissed', JSON.stringify(Array.from(newDismissed)));
-  }, [dismissedAlerts]);
-
-  // Snooze alert for specified minutes
-  const snoozeAlert = useCallback((meetingId: string, minutes: number = 30) => {
-    const snoozeUntil = new Date(Date.now() + minutes * 60 * 1000);
-    const newSnoozed = new Map(snoozedAlerts);
-    newSnoozed.set(meetingId, snoozeUntil);
-    setSnoozedAlerts(newSnoozed);
-    localStorage.setItem(
-      'meeting_alerts_snoozed',
-      JSON.stringify(Array.from(newSnoozed.entries()))
-    );
-  }, [snoozedAlerts]);
-
-  // Check if snooze has expired
-  const isSnoozeExpired = useCallback((meetingId: string): boolean => {
-    const snoozeUntil = snoozedAlerts.get(meetingId);
-    if (!snoozeUntil) return false;
-    return new Date() > snoozeUntil;
-  }, [snoozedAlerts]);
-
-  // Trigger alert to backend (sends WhatsApp)
-  const triggerMeetingAlert = useCallback(async (meetingId: string, alertType: string) => {
-    try {
-      const response = await fetch(`/api/meetings/${meetingId}/schedule-alerts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ alertType })
-      });
-
-      if (!response.ok) throw new Error('Failed to send alert');
-      return await response.json();
-    } catch (error) {
-      console.error('Error triggering meeting alert:', error);
-      throw error;
-    }
-  }, []);
+  }, [error])
 
   return {
-    meetings: data?.grouped as TodaysMeetingGroup[] | undefined,
-    summary: data?.summary,
+    meetings,
+    summary,
     isLoading,
-    error,
-    dismissedAlerts,
-    snoozedAlerts,
-    isSnoozeExpired,
-    dismissAlert,
-    snoozeAlert,
-    triggerMeetingAlert,
-    mutate
-  };
-}
-
-// Hook to determine if meeting needs alert
-export function useMeetingAlertStatus(meeting: MeetingWithAttendees) {
-  const now = new Date();
-  const startTime = new Date(meeting.start_time);
-  const endTime = new Date(meeting.end_time);
-  const oneHourBefore = new Date(startTime.getTime() - 60 * 60 * 1000);
-  const sixHoursBefore = new Date(startTime.getTime() - 6 * 60 * 60 * 1000);
-
-  let status = 'upcoming';
-  let minutesUntilStart = Math.floor((startTime.getTime() - now.getTime()) / (1000 * 60));
-
-  if (now >= startTime && now <= endTime) {
-    status = 'happening_now';
-  } else if (now >= oneHourBefore && now <= startTime) {
-    status = 'imminent';
-  } else if (now >= sixHoursBefore && now < oneHourBefore) {
-    status = 'today';
+    error
   }
-
-  return {
-    status,
-    minutesUntilStart: Math.max(0, minutesUntilStart),
-    shouldShowAlert: status === 'imminent' || status === 'happening_now',
-    shouldShowToast: status === 'today' || status === 'imminent',
-    needsUrgentAction: status === 'imminent' || status === 'happening_now'
-  };
 }
