@@ -9,6 +9,7 @@ import { Sidebar } from "@/components/sidebar"
 import { SprintSelectorDropdown } from "@/components/sprint-selector-dropdown"
 import { TaskKanban } from "@/components/task-kanban"
 import { TaskModalWithPKR } from "@/components/task-modal-with-pkr"
+import { TodaysMeetingsWidget } from "@/components/todays-meetings-widget"
 import { AlertCircle, TrendingUp, CheckCircle2, Zap, X } from "lucide-react"
 import { useClient } from "@/contexts/client-context"
 import type { Task } from "@/components/my-tasks-today"
@@ -216,6 +217,9 @@ export default function AccountManagerPage() {
                   <div className="type-caption text-[#86868B] mt-2">This week</div>
                 </div>
               </div>
+
+              {/* TODAY'S MEETINGS WIDGET */}
+              <TodaysMeetingsWidget />
 
               {/* BOTTLENECK ROW: Task Distribution */}
               <div className="bg-white border border-[#E5E7EB] rounded-lg p-4">
