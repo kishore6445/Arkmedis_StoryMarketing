@@ -213,7 +213,16 @@ export function TaskKanban({ tasks, onTaskStatusChange, isLoading, onTaskUpdate,
   }
 
   const handleDrop = async (columnId: string) => {
-    if (!draggedTask || sourceColumn === columnId) {
+    if (!draggedTask) {
+      setDraggedTask(null)
+      setSourceColumn(null)
+      setDragOverColumn(null)
+      setIsAnimating(false)
+      return
+    }
+
+    // Allow dropping to the same column if it's the done column (special case)
+    if (sourceColumn === columnId && columnId !== "done") {
       setDraggedTask(null)
       setSourceColumn(null)
       setDragOverColumn(null)
@@ -394,7 +403,17 @@ export function TaskKanban({ tasks, onTaskStatusChange, isLoading, onTaskUpdate,
       </div>
 
       {/* Right side: Done wins panel (30%) - Always visible */}
-      <div className="w-96 bg-white border-l border-gray-200 flex flex-col overflow-hidden">
+      <div 
+        className={cn(
+          "w-96 bg-white border-l flex flex-col overflow-hidden transition-all duration-200",
+          dragOverColumn === "done" && draggedTask
+            ? "border-green-400 bg-green-50 shadow-md ring-1 ring-green-200"
+            : "border-gray-200 hover:shadow-md hover:border-gray-300"
+        )}
+        onDragOver={(e) => handleDragOver(e, "done")}
+        onDragLeave={handleDragLeave}
+        onDrop={() => handleDrop("done")}
+      >
         <div className="px-6 py-6 border-b border-gray-100">
           <h3 className="font-semibold text-sm text-gray-800 flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />

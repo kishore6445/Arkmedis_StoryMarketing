@@ -6,12 +6,14 @@
 export interface Task {
   id: string
   title: string
-  status: 'todo' | 'in_progress' | 'done'
+  status: 'todo' | 'in_progress' | 'in_review' | 'done'
   due_date?: string
   due_time?: string
   promised_date?: string
   promised_time?: string
   completed_at?: string
+  reviewed_at?: string
+  updated_at?: string
   internal_status?: string
   external_status?: string
   assigned_to?: string
@@ -40,6 +42,28 @@ export interface ComprehensivePKR {
 }
 
 /**
+ * Get the effective completion date for a task
+ * in_review status counts as completion, using reviewed_at or updated_at
+ * done status uses completed_at, reviewed_at, or updated_at
+ */
+export function getCompletionDate(task: Task): Date | null {
+  if (task.status === 'in_review' || task.status === 'done') {
+    // For in_review or done, use reviewed_at, then completed_at, then updated_at
+    if (task.reviewed_at) return new Date(task.reviewed_at)
+    if (task.completed_at) return new Date(task.completed_at)
+    if (task.updated_at) return new Date(task.updated_at)
+  }
+  return null
+}
+
+/**
+ * Check if a task is considered completed for PKR purposes
+ */
+export function isTaskCompleted(task: Task): boolean {
+  return task.status === 'in_review' || task.status === 'done'
+}
+
+/**
  * Combine date and time into a single Date object
  */
 export function combineDateTime(date: string | null | undefined, time: string | null | undefined): Date | null {
@@ -61,6 +85,7 @@ export function combineDateTime(date: string | null | undefined, time: string | 
 /**
  * Calculate Internal PKR (Team Commitment Performance)
  * Measures how well the team meets internal deadlines
+ * in_review status counts as task completion
  */
 export function calculateInternalPKR(tasks: Task[], userId?: string): PKRMetrics {
   // Filter by user if provided
@@ -93,9 +118,9 @@ export function calculateInternalPKR(tasks: Task[], userId?: string): PKRMetrics
     
     if (!dueDateTime) return
     
-    if (task.status === 'done') {
-      // Task is completed - check if it was on time
-      const completedAt = task.completed_at ? new Date(task.completed_at) : now
+    if (isTaskCompleted(task)) {
+      // Task is completed (in_review or done) - check if it was on time
+      const completedAt = getCompletionDate(task) || now
       
       if (completedAt <= dueDateTime) {
         onTimeCount++
@@ -133,6 +158,7 @@ export function calculateInternalPKR(tasks: Task[], userId?: string): PKRMetrics
 /**
  * Calculate External PKR (Client-Facing Performance)
  * Measures how well promises to clients are kept
+ * in_review status counts as task completion (submission to client)
  */
 export function calculateExternalPKR(tasks: Task[], userId?: string): PKRMetrics {
   // Filter by user if provided
@@ -166,9 +192,9 @@ export function calculateExternalPKR(tasks: Task[], userId?: string): PKRMetrics
     
     if (!promisedDateTime) return
     
-    if (task.status === 'done') {
-      // Task is completed - check if delivered on time
-      const completedAt = task.completed_at ? new Date(task.completed_at) : now
+    if (isTaskCompleted(task)) {
+      // Task is completed (in_review or done) - check if delivered on time
+      const completedAt = getCompletionDate(task) || now
       
       if (completedAt <= promisedDateTime) {
         onTimeCount++
@@ -205,6 +231,7 @@ export function calculateExternalPKR(tasks: Task[], userId?: string): PKRMetrics
 /**
  * Calculate Commitment Quality Score
  * Measures how many completed tasks met internal deadlines
+ * Considers both in_review and done status as completed
  */
 export function calculateCommitmentQuality(tasks: Task[], userId?: string): number {
   // Filter by user if provided
@@ -213,7 +240,7 @@ export function calculateCommitmentQuality(tasks: Task[], userId?: string): numb
     filteredTasks = tasks.filter(t => t.assigned_to === userId)
   }
   
-  const completedTasks = filteredTasks.filter(t => t.status === 'done' && t.due_date)
+  const completedTasks = filteredTasks.filter(t => isTaskCompleted(t) && t.due_date)
   
   if (completedTasks.length === 0) return 100 // No tasks completed yet
   
@@ -221,7 +248,7 @@ export function calculateCommitmentQuality(tasks: Task[], userId?: string): numb
     const dueDateTime = combineDateTime(task.due_date, task.due_time)
     if (!dueDateTime) return false
     
-    const completedAt = task.completed_at ? new Date(task.completed_at) : new Date()
+    const completedAt = getCompletionDate(task) || new Date()
     return completedAt <= dueDateTime
   }).length
   
@@ -280,6 +307,7 @@ export function calculateComprehensivePKR(tasks: Task[], userId?: string): Compr
 
 /**
  * Calculate PKR for a single task
+ * Treats in_review status as completion for PKR purposes
  */
 export function calculateTaskPKR(task: Task): {
   score: number
@@ -301,9 +329,9 @@ export function calculateTaskPKR(task: Task): {
   const isOverdue = timeUntilDue < 0
   const isPastPromised = timeUntilPromised < 0
   
-  // For completed tasks
-  if (task.status === 'done' || task.status === 'completed') {
-    const completedAt = task.completed_at ? new Date(task.completed_at) : now
+  // For completed tasks (in_review or done)
+  if (isTaskCompleted(task)) {
+    const completedAt = getCompletionDate(task) || now
     const deadline = promisedDateTime || dueDateTime
     
     if (!deadline) {

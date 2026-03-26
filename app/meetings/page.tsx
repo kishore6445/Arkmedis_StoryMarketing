@@ -8,6 +8,7 @@ import { MeetingsScheduleForm } from "@/components/meetings-schedule-form"
 import { MeetingsList } from "@/components/meetings-list"
 import { MeetingsDetailsPanel } from "@/components/meetings-details-panel"
 import { MeetingsMomCard } from "@/components/meetings-mom-card"
+import { TodaysMeetingsWidget } from "@/components/todays-meetings-widget"
 
 interface Meeting {
   id: string
@@ -68,6 +69,11 @@ export default function MeetingsPage() {
             New Meeting
           </button>
         </div>
+      </div>
+
+      {/* Today's Meetings Widget */}
+      <div className="px-8 py-6 border-b border-gray-200 bg-gray-50">
+        <TodaysMeetingsWidget />
       </div>
 
       {/* Main Content */}
