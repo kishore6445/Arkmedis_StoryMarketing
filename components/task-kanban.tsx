@@ -394,13 +394,21 @@ export function TaskKanban({ tasks, onTaskStatusChange, isLoading, onTaskUpdate,
       </div>
 
       {/* Right side: Done wins panel (30%) - Always visible */}
-      <div className="w-96 bg-white border-l border-gray-200 flex flex-col overflow-hidden">
+      <div
+        className={cn(
+          "w-96 bg-white border-l border-gray-200 flex flex-col overflow-hidden transition-colors",
+          dragOverColumn === "done" && draggedTask ? "bg-green-50 border-green-300" : ""
+        )}
+        onDragOver={(e) => handleDragOver(e, "done")}
+        onDragLeave={handleDragLeave}
+        onDrop={() => handleDrop("done")}
+      >
         <div className="px-6 py-6 border-b border-gray-100">
           <h3 className="font-semibold text-sm text-gray-800 flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
             Done ({tasks.filter(t => t.status === "done" || t.completed).length})
           </h3>
-          <p className="text-xs text-gray-500 mt-1">Showing recent wins</p>
+          <p className="text-xs text-gray-500 mt-1">Completed tasks</p>
         </div>
 
         {/* Done tasks scrollable area */}
@@ -421,7 +429,6 @@ export function TaskKanban({ tasks, onTaskStatusChange, isLoading, onTaskUpdate,
                   const bDate = new Date(b.completedAt || b.updatedAt || 0).getTime()
                   return bDate - aDate
                 })
-                .slice(0, 20) // Show up to 20 recent completions
                 .map((task) => (
                   <div
                     key={task.id}

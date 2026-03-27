@@ -478,6 +478,23 @@ console.log("formData entries", Array.from(fileData.entries()))
 
   const handleStatusChange = async (taskId: string, newStatus: string) => {
     const token = localStorage.getItem("sessionToken")
+
+    // Optimistically update local task state so Kanban columns refresh immediately
+    mutate(
+      {
+        tasks: tasks.map((t) =>
+          t.id === taskId
+            ? {
+                ...t,
+                status: newStatus,
+                completed: newStatus === "done",
+              }
+            : t
+        ),
+      },
+      false
+    )
+
     try {
       const response = await fetch("/api/tasks", {
         method: "PUT",
@@ -494,6 +511,8 @@ console.log("formData entries", Array.from(fileData.entries()))
       if (!response.ok) {
         const errorData = await response.json()
         console.error("[v0] Error updating task status:", errorData.error || response.statusText)
+        // Revert optimistic update when backend update fails
+        mutate()
         return
       }
 
@@ -501,6 +520,8 @@ console.log("formData entries", Array.from(fileData.entries()))
       mutate()
     } catch (error) {
       console.error("[v0] Error changing task status:", error)
+      // Revert optimistic update when request throws
+      mutate()
     }
   }
 
