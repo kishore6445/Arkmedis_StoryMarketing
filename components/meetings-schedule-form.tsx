@@ -4,10 +4,19 @@ import { useState } from "react"
 import { X, Loader, ChevronDown } from "lucide-react"
 import useSWR from "swr"
 import { cn } from "@/lib/utils"
+import { MeetingAlert } from "./meeting-alert"
 
 interface MeetingsScheduleFormProps {
   onSuccess: () => void
   onCancel: () => void
+}
+
+interface ScheduledMeetingData {
+  title: string
+  clientName: string
+  date: string
+  time: string
+  attendees: Array<{ full_name: string }>
 }
 
 const fetcher = async (url: string) => {
@@ -25,6 +34,7 @@ export function MeetingsScheduleForm({ onSuccess, onCancel }: MeetingsScheduleFo
 
   const [isLoading, setIsLoading] = useState(false)
   const [showAttendeesDropdown, setShowAttendeesDropdown] = useState(false)
+  const [scheduledMeeting, setScheduledMeeting] = useState<ScheduledMeetingData | null>(null)
   const [formData, setFormData] = useState({
     clientName: "",
     title: "",
@@ -67,6 +77,20 @@ export function MeetingsScheduleForm({ onSuccess, onCancel }: MeetingsScheduleFo
       })
 
       if (response.ok) {
+        // Get attendee full names
+        const attendeeDetails = teamMembers
+          .filter((member: any) => formData.attendees.includes(member.id))
+          .map((member: any) => ({ full_name: member.full_name }))
+
+        // Show the alert
+        setScheduledMeeting({
+          title: formData.title || `Meeting with ${formData.clientName}`,
+          clientName: formData.clientName,
+          date: formData.date,
+          time: formData.time,
+          attendees: attendeeDetails,
+        })
+
         onSuccess()
         setFormData({
           clientName: "",
@@ -86,7 +110,19 @@ export function MeetingsScheduleForm({ onSuccess, onCancel }: MeetingsScheduleFo
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <>
+      {scheduledMeeting && (
+        <MeetingAlert
+          title={scheduledMeeting.title}
+          clientName={scheduledMeeting.clientName}
+          date={scheduledMeeting.date}
+          time={scheduledMeeting.time}
+          attendees={scheduledMeeting.attendees}
+          onDismiss={() => setScheduledMeeting(null)}
+          autoCloseDuration={8000}
+        />
+      )}
+      <form onSubmit={handleSubmit} className="space-y-4">
       {/* Client Dropdown - Primary */}
       <div>
         <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
@@ -256,5 +292,6 @@ export function MeetingsScheduleForm({ onSuccess, onCancel }: MeetingsScheduleFo
         </button>
       </div>
     </form>
+    </>
   )
 }
