@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Plus, Download, Upload } from "lucide-react"
 import { ContentCalendarView } from "@/components/content-calendar-view"
 import AddContentModal from "@/components/add-content-modal-cv"
+import { BreadcrumbTrail } from "@/components/breadcrumb-trail"
 import type { ContentRecordListItem } from "@/lib/content-records"
 
 const MONTH_OPTIONS = [
@@ -31,6 +32,13 @@ export default function ContentCalendarPage() {
 
   return (
     <div className="w-full max-w-7xl">
+      {/* Breadcrumbs */}
+      <BreadcrumbTrail
+        items={[
+          { label: "Home", onClick: () => window.location.href = "/" },
+          { label: "Content Calendar", active: true },
+        ]}
+      />
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <div>

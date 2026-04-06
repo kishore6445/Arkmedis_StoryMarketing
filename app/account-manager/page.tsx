@@ -11,6 +11,7 @@ import { TaskKanban } from "@/components/task-kanban"
 import { TaskModalWithPKR } from "@/components/task-modal-with-pkr"
 import { AlertCircle, TrendingUp, CheckCircle2, Zap, X } from "lucide-react"
 import { useClient } from "@/contexts/client-context"
+import { BreadcrumbTrail } from "@/components/breadcrumb-trail"
 import type { Task } from "@/components/my-tasks-today"
 
 const fetcher = (url: string) => {

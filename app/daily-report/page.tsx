@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2, Send, Calendar, Clock, 
 import { cn } from "@/lib/utils"
 import { QuickAddFromTimer } from "@/components/quick-add-from-timer"
 import { getTodaysTotalHours } from "@/lib/timer-service"
+import { BreadcrumbTrail } from "@/components/breadcrumb-trail"
 
 interface TimeEntry {
   id: string
@@ -247,6 +248,13 @@ export default function DailyReportPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F5F5F7] to-[#EFEFEF]">
+      {/* Breadcrumbs */}
+      <BreadcrumbTrail
+        items={[
+          { label: "Home", onClick: () => window.location.href = "/" },
+          { label: "Daily Work", active: true },
+        ]}
+      />
       {/* Header */}
       <div className="sticky top-0 z-40 bg-white border-b border-[#E5E5E7] shadow-sm">
         <div className="max-w-6xl mx-auto px-6 py-6">
