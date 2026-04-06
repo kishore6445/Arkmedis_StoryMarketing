@@ -21,6 +21,7 @@ interface SprintSelectorDropdownProps {
   isLoading?: boolean
   clientId?: string
   teamMembers?: Array<{ id: string; full_name: string; email: string }>
+  onEditSprintRequested?: (sprintId: string) => void
 }
 
 export function SprintSelectorDropdown({
@@ -33,6 +34,7 @@ export function SprintSelectorDropdown({
   isLoading,
   clientId,
   teamMembers = [],
+  onEditSprintRequested,
 }: SprintSelectorDropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
@@ -164,6 +166,7 @@ export function SprintSelectorDropdown({
     setNewSprintName(sprint.name)
     setNewSprintStart(sprint.start_date)
     setNewSprintEnd(sprint.end_date)
+    onEditSprintRequested?.(sprint.id)
   }
 
   return (

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Settings } from "lucide-react"
+import { Settings, Edit2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import useSWR from "swr"
 
@@ -11,10 +11,12 @@ interface CompactSprintHeaderProps {
   endDate: string
   taskCount: number
   completedCount: number
+  sprintId?: string
   pkr?: number
   atRisk?: number
   overdue?: number
   isBacklogView?: boolean
+  onSprintEdit?: (sprintId: string) => void
 }
 
 interface UserProfile {
@@ -33,10 +35,12 @@ export function CompactSprintHeader({
   endDate,
   taskCount,
   completedCount,
+  sprintId,
   pkr = 92,
   atRisk = 0,
   overdue = 0,
   isBacklogView = false,
+  onSprintEdit,
 }: CompactSprintHeaderProps) {
   const token = typeof window !== "undefined" ? localStorage.getItem("sessionToken") : null
 
@@ -129,7 +133,7 @@ export function CompactSprintHeader({
 
             {/* RIGHT: Sprint Completion - Stronger (Hidden in Backlog) */}
             {!isBacklogView && (
-              <div className="flex items-start gap-3 flex-shrink-0">
+              <div className="flex items-start gap-2 flex-shrink-0">
                 <div className="text-left">
                   <div className="text-[9px] text-[#BDBDBE] font-semibold leading-[1.2] uppercase tracking-widest">Completion</div>
                   <div className="text-xl font-black text-[#111111] leading-[1.2] mt-0.5">
@@ -143,7 +147,35 @@ export function CompactSprintHeader({
                   </div>
                 </div>
 
-                {/* Settings */}
+                {/* Edit and Settings Buttons */}
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => onSprintEdit?.(sprintId || "")}
+                    className="p-1.5 rounded hover:bg-[#F5F5F7] transition-colors text-[#6B7280] hover:text-[#007AFF] hover:font-semibold"
+                    title="Edit Sprint"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    className="p-1.5 rounded hover:bg-[#F5F5F7] transition-colors text-[#6B7280] hover:text-[#111111]"
+                    title="Settings"
+                  >
+                    <Settings className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            {/* Backlog View - Edit and Settings */}
+            {isBacklogView && (
+              <div className="flex gap-1">
+                <button
+                  onClick={() => onSprintEdit?.(sprintId || "")}
+                  className="p-1.5 rounded hover:bg-[#F5F5F7] transition-colors text-[#6B7280] hover:text-[#007AFF] hover:font-semibold"
+                  title="Edit Sprint"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
                 <button
                   className="p-1.5 rounded hover:bg-[#F5F5F7] transition-colors text-[#6B7280] hover:text-[#111111]"
                   title="Settings"
@@ -151,16 +183,6 @@ export function CompactSprintHeader({
                   <Settings className="w-4 h-4" />
                 </button>
               </div>
-            )}
-            
-            {/* Backlog View - Just Settings */}
-            {isBacklogView && (
-              <button
-                className="p-1.5 rounded hover:bg-[#F5F5F7] transition-colors text-[#6B7280] hover:text-[#111111]"
-                title="Settings"
-              >
-                <Settings className="w-4 h-4" />
-              </button>
             )}
           </div>
         </div>
