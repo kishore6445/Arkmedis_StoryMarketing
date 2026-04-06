@@ -1,8 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2, Send, Calendar, Clock, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { QuickAddFromTimer } from "@/components/quick-add-from-timer"
+import { getTodaysTotalHours } from "@/lib/timer-service"
 
 interface TimeEntry {
   id: string
@@ -73,6 +75,17 @@ export default function DailyReportPage() {
     const date = new Date()
     return date.toISOString().split("T")[0]
   })
+
+  const [trackedHours, setTrackedHours] = useState(0)
+
+  // Update tracked hours on mount and when date changes
+  useEffect(() => {
+    if (currentDate === new Date().toISOString().split("T")[0]) {
+      setTrackedHours(getTodaysTotalHours())
+    } else {
+      setTrackedHours(0)
+    }
+  }, [currentDate])
 
   const [entries, setEntries] = useState<TimeEntry[]>([
     {
@@ -210,6 +223,18 @@ export default function DailyReportPage() {
     }
     setReportStatus("submitted")
     setShowSubmitModal(false)
+  }
+
+  const handleAddFromTimer = (taskId: string, hours: number, clientName: string, sprintName: string, taskTitle: string) => {
+    const newEntry: TimeEntry = {
+      id: Date.now().toString(),
+      client: clientName,
+      sprint: sprintName,
+      task: taskTitle,
+      hours: hours,
+      description: `Tracked via Pomodoro timer - ${hours} hours logged`,
+    }
+    setEntries([...entries, newEntry])
   }
 
   const filteredSprints = selectedClientId
@@ -440,6 +465,11 @@ export default function DailyReportPage() {
                   />
                 </div>
                 <p className="text-xs text-[#86868B] mt-2">{entries.length} entries logged</p>
+                {currentDate === new Date().toISOString().split("T")[0] && trackedHours > 0 && (
+                  <p className="text-xs text-[#007AFF] mt-2 font-medium">
+                    {trackedHours.toFixed(2)}h tracked via timer
+                  </p>
+                )}
               </div>
 
               <div className="bg-white rounded-xl shadow-sm border border-[#E5E5E7] p-6">
@@ -467,6 +497,12 @@ export default function DailyReportPage() {
 
             {/* Entries List */}
             <div className="space-y-3">
+              {/* Quick Add from Timer */}
+              {currentDate === new Date().toISOString().split("T")[0] && trackedHours > 0 && (
+                <div className="mb-6">
+                  <QuickAddFromTimer onAddEntry={handleAddFromTimer} />
+                </div>
+              )}
               {entries.length === 0 ? (
                 <div className="bg-white rounded-xl shadow-sm border border-[#E5E5E7] p-12 text-center">
                   <Clock className="w-12 h-12 text-[#D1D5DB] mx-auto mb-3 opacity-50" />
