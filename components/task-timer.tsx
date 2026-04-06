@@ -16,21 +16,24 @@ import {
 interface TaskTimerProps {
   taskId: string
   taskTitle: string
-  clientName: string
-  sprintName: string
+  clientName?: string
+  sprintName?: string
   onClose?: () => void
   compact?: boolean
+  variant?: 'minimal' | 'tinted' | 'premium'
 }
 
 export function TaskTimer({
   taskId,
   taskTitle,
-  clientName,
-  sprintName,
+  clientName = '',
+  sprintName = '',
   onClose,
   compact = false,
+  variant = 'minimal',
 }: TaskTimerProps) {
   const [isRunning, setIsRunning] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
   const [elapsed, setElapsed] = useState(0)
   const [hasStarted, setHasStarted] = useState(false)
 
@@ -63,11 +66,13 @@ export function TaskTimer({
       resumeTimerSession(taskId)
     }
     setIsRunning(true)
+    setIsPaused(false)
   }, [taskId, taskTitle, clientName, sprintName, hasStarted])
 
   const handlePause = useCallback(() => {
     pauseTimerSession(taskId)
     setIsRunning(false)
+    setIsPaused(true)
   }, [taskId])
 
   const handleStop = useCallback(() => {
@@ -96,58 +101,212 @@ export function TaskTimer({
   }
 
   if (compact) {
-    return (
-      <div className={cn('p-3 rounded-lg border border-gray-200', bgColor)}>
-        <div className="flex items-center justify-between gap-2">
-          <div className={cn('text-lg font-mono font-bold', statusColor)}>
-            {formatTime(elapsed)}
+    // VARIANT A: Ultra minimal inline timer row - no background box
+    if (variant === 'minimal') {
+      return (
+        <div className="flex items-center justify-between w-full px-0">
+          <div className="flex items-center gap-2">
+            {isRunning && (
+              <span className="flex h-2 w-2 animate-pulse bg-green-500 rounded-full" />
+            )}
+            {isPaused && (
+              <span className="h-2 w-2 bg-amber-500 rounded-full" />
+            )}
+            <span className={cn(
+              'font-mono text-sm font-semibold',
+              isRunning ? 'text-green-600' : isPaused ? 'text-amber-600' : 'text-gray-500'
+            )}>
+              {formatTime(elapsed)}
+            </span>
           </div>
-          <div className="flex gap-1">
-            {!isRunning && hasStarted ? (
+          <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+            {!isRunning && hasStarted && !isPaused ? (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleStart() }}
+                className="p-1 text-green-600 hover:text-green-700 transition-colors"
+                title="Start"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+              </button>
+            ) : !isRunning && isPaused ? (
               <>
                 <button
-                  onClick={handleStart}
-                  className="p-1.5 rounded hover:bg-white transition-colors text-green-600 hover:shadow-sm"
+                  onClick={(e) => { e.stopPropagation(); handleStart() }}
+                  className="p-1 text-green-600 hover:text-green-700 transition-colors"
                   title="Resume"
                 >
-                  <Play className="w-4 h-4 fill-current" />
+                  <Play className="w-3.5 h-3.5 fill-current" />
                 </button>
                 <button
-                  onClick={handleReset}
-                  className="p-1.5 rounded hover:bg-white transition-colors text-gray-600 hover:shadow-sm"
-                  title="Reset"
+                  onClick={(e) => { e.stopPropagation(); handleStop() }}
+                  className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                  title="Stop"
                 >
-                  <RotateCcw className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </>
             ) : (
               <button
-                onClick={isRunning ? handlePause : handleStart}
-                className={cn(
-                  'p-1.5 rounded hover:shadow-sm transition-colors',
-                  isRunning
-                    ? 'bg-orange-100 text-orange-600 hover:bg-orange-150'
-                    : 'bg-green-100 text-green-600 hover:bg-green-150'
-                )}
-                title={isRunning ? 'Pause' : 'Start'}
+                onClick={(e) => { e.stopPropagation(); handlePause() }}
+                className="p-1 text-amber-600 hover:text-amber-700 transition-colors"
+                title="Pause"
               >
-                {isRunning ? (
-                  <Pause className="w-4 h-4 fill-current" />
-                ) : (
-                  <Play className="w-4 h-4 fill-current" />
-                )}
-              </button>
-            )}
-            {onClose && (
-              <button
-                onClick={onClose}
-                className="p-1.5 rounded hover:bg-gray-100 transition-colors text-gray-600"
-                title="Close"
-              >
-                <X className="w-4 h-4" />
+                <Pause className="w-3.5 h-3.5 fill-current" />
               </button>
             )}
           </div>
+        </div>
+      )
+    }
+
+    // VARIANT B: Soft tinted bottom strip - integrated elegant appearance
+    if (variant === 'tinted') {
+      return (
+        <div className={cn(
+          'flex items-center justify-between w-full px-2 py-1.5 -mx-1 rounded-b',
+          isRunning ? 'bg-green-50' : isPaused ? 'bg-amber-50' : 'bg-gray-50'
+        )}>
+          <div className="flex items-center gap-2">
+            {isRunning && (
+              <>
+                <span className="flex h-2 w-2 animate-pulse bg-green-500 rounded-full" />
+                <span className="text-xs font-medium text-green-700">Live</span>
+              </>
+            )}
+            {isPaused && (
+              <>
+                <span className="h-2 w-2 bg-amber-500 rounded-full" />
+                <span className="text-xs font-medium text-amber-700">Paused</span>
+              </>
+            )}
+            <span className={cn(
+              'font-mono text-sm font-bold ml-1',
+              isRunning ? 'text-green-700' : isPaused ? 'text-amber-700' : 'text-gray-600'
+            )}>
+              {formatTime(elapsed)}
+            </span>
+          </div>
+          <div className="flex gap-0.5" onClick={(e) => e.stopPropagation()}>
+            {!isRunning && hasStarted && !isPaused ? (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleStart() }}
+                className="p-1 text-green-600 hover:bg-green-100 rounded transition-colors"
+                title="Start"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+              </button>
+            ) : !isRunning && isPaused ? (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleStart() }}
+                  className="p-1 text-green-600 hover:bg-green-100 rounded transition-colors"
+                  title="Resume"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleStop() }}
+                  className="p-1 text-gray-500 hover:bg-gray-200 rounded transition-colors"
+                  title="Stop"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={(e) => { e.stopPropagation(); handlePause() }}
+                className="p-1 text-amber-600 hover:bg-amber-100 rounded transition-colors"
+                title="Pause"
+              >
+                <Pause className="w-3.5 h-3.5 fill-current" />
+              </button>
+            )}
+          </div>
+        </div>
+      )
+    }
+
+    // VARIANT C: Premium active focus style - subtle green accent for running state
+    if (variant === 'premium') {
+      return (
+        <div className={cn(
+          'flex items-center justify-between w-full px-2 py-2 rounded-sm border-l-2 transition-colors',
+          isRunning ? 'border-green-500 bg-green-50/40' : isPaused ? 'border-amber-500 bg-amber-50/40' : 'border-transparent bg-transparent'
+        )}>
+          <div className="flex items-center gap-2.5">
+            {isRunning && (
+              <span className="flex h-2.5 w-2.5 animate-pulse bg-green-500 rounded-full shadow-sm" />
+            )}
+            {isPaused && (
+              <span className="h-2.5 w-2.5 bg-amber-400 rounded-full shadow-sm" />
+            )}
+            {!isRunning && !isPaused && (
+              <span className="h-2.5 w-2.5 bg-gray-300 rounded-full" />
+            )}
+            <span className={cn(
+              'font-mono text-sm font-bold',
+              isRunning ? 'text-green-700' : isPaused ? 'text-amber-700' : 'text-gray-600'
+            )}>
+              {formatTime(elapsed)}
+            </span>
+          </div>
+          <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+            {!isRunning && hasStarted && !isPaused ? (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleStart() }}
+                className="px-2 py-1 text-xs text-green-700 hover:bg-green-100 rounded transition-colors font-medium"
+                title="Start"
+              >
+                Start
+              </button>
+            ) : !isRunning && isPaused ? (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleStart() }}
+                  className="px-2 py-1 text-xs text-green-700 hover:bg-green-100 rounded transition-colors font-medium"
+                  title="Resume"
+                >
+                  Resume
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleStop() }}
+                  className="p-1 text-gray-500 hover:bg-gray-200 rounded transition-colors"
+                  title="Stop"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={(e) => { e.stopPropagation(); handlePause() }}
+                className="px-2 py-1 text-xs text-amber-700 hover:bg-amber-100 rounded transition-colors font-medium"
+                title="Pause"
+              >
+                Pause
+              </button>
+            )}
+          </div>
+        </div>
+      )
+    }
+
+    // Default fallback
+    return (
+      <div className="p-3 rounded-lg border border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-sm font-mono font-bold text-gray-700">
+            {formatTime(elapsed)}
+          </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); isRunning ? handlePause() : handleStart() }}
+            className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
+          >
+            {isRunning ? (
+              <Pause className="w-4 h-4 fill-current" />
+            ) : (
+              <Play className="w-4 h-4 fill-current" />
+            )}
+          </button>
         </div>
       </div>
     )

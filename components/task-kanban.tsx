@@ -378,9 +378,9 @@ export function TaskKanban({ tasks, onTaskStatusChange, isLoading, onTaskUpdate,
                                 </div>
                               )}
 
-                              {/* Pomodoro Timer */}
-                              <div className="mt-2 pt-2 border-t border-gray-100">
-                                <TaskTimer taskId={task.id} taskTitle={task.title} compact />
+                              {/* Pomodoro Timer - Refined minimal integration */}
+                              <div className="mt-3 -mx-4 -mb-4 px-4 py-2 border-t border-gray-100 flex items-center justify-between">
+                                <TaskTimer taskId={task.id} taskTitle={task.title} compact variant="minimal" />
                               </div>
                             </div>
                           )
