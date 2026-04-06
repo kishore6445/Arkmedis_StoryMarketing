@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseClient } from '@/lib/db'
 import { verifyAuth } from '@/lib/auth'
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const authResult = await verifyAuth(request)
     if (!authResult.authenticated || !authResult.user) {
@@ -11,7 +11,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     const body = await request.json()
     const { name, startDate, endDate, status } = body
-    const sprintId = params.id
+    const { id: sprintId } = await params
 
     const supabase = getSupabaseClient()
     
@@ -40,14 +40,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const authResult = await verifyAuth(request)
     if (!authResult.authenticated || !authResult.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const sprintId = params.id
+    const { id: sprintId } = await params
     const supabase = getSupabaseClient()
 
     const { error } = await supabase
