@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import type { Task } from "./my-tasks-today"
 import { cn } from "@/lib/utils"
 import { CheckCircle2, Circle, ChevronDown, Calendar } from "lucide-react"
+import { TaskTimer } from "./task-timer"
 
 interface KanbanColumn {
   id: string
@@ -376,6 +377,11 @@ export function TaskKanban({ tasks, onTaskStatusChange, isLoading, onTaskUpdate,
                                   )}
                                 </div>
                               )}
+
+                              {/* Pomodoro Timer */}
+                              <div className="mt-2 pt-2 border-t border-gray-100">
+                                <TaskTimer taskId={task.id} taskTitle={task.title} compact />
+                              </div>
                             </div>
                           )
                         })}
