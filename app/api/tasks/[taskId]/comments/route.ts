@@ -3,7 +3,7 @@ import { getSupabaseAdminClient } from "@/lib/db"
 import { validateSession } from "@/lib/auth"
 
 // GET - Fetch comments for a task
-export async function GET(request: NextRequest, { params }: { params: { taskId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ taskId: string }> }) {
   try {
     const authHeader = request.headers.get("authorization")
     if (!authHeader) {
@@ -17,9 +17,8 @@ export async function GET(request: NextRequest, { params }: { params: { taskId: 
     }
 
     const supabase = getSupabaseAdminClient()
-    const taskId = params.taskId
-
-    console.log("[v0] Fetching comments for task:", taskId)
+    const resolvedParams = await params
+    const taskId = resolvedParams.taskId
 
     const { data: comments, error } = await supabase
       .from("task_comments")

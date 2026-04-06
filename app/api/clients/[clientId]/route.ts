@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseAdminClient } from "@/lib/db"
 import { validateSession } from "@/lib/auth"
 
-export async function PUT(request: NextRequest, { params }: { params: { clientId: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ clientId: string }> }) {
   try {
     // Validate session
     const authHeader = request.headers.get('authorization')
@@ -18,6 +18,8 @@ export async function PUT(request: NextRequest, { params }: { params: { clientId
     }
 
     const { name, description, brandColor, is_active } = await request.json()
+    const resolvedParams = await params
+    const clientId = resolvedParams.clientId
 
     const supabase = getSupabaseAdminClient()
     const updateData: any = {}
@@ -30,7 +32,7 @@ export async function PUT(request: NextRequest, { params }: { params: { clientId
     const { data: client, error } = await supabase
       .from('clients')
       .update(updateData)
-      .eq('id', params.clientId)
+      .eq('id', clientId)
       .select()
       .single()
 
@@ -46,8 +48,10 @@ export async function PUT(request: NextRequest, { params }: { params: { clientId
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { clientId: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ clientId: string }> }) {
   try {
+    const resolvedParams = await params
+    const clientId = resolvedParams.clientId
     // Validate session
     const authHeader = request.headers.get('authorization')
     const sessionToken = authHeader?.replace('Bearer ', '') || request.cookies.get('session')?.value
@@ -67,7 +71,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { clien
     const { error } = await supabase
       .from('clients')
       .update({ is_active: false })
-      .eq('id', params.clientId)
+      .eq('id', clientId)
 
     if (error) {
       console.error("[v0] Error deleting client:", error)
