@@ -3,10 +3,8 @@ import { getSupabaseAdminClient } from "@/lib/db"
 import { validateSession } from "@/lib/auth"
 
 // GET - Fetch a single task
-export async function GET(request: NextRequest, { params }: { params: { taskId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ taskId: string }> }) {
   try {
-    debugger;
-    console.log("[v0] Received request to fetch task with ID:", params.taskId);
     const authHeader = request.headers.get("authorization")
     if (!authHeader) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -20,13 +18,8 @@ export async function GET(request: NextRequest, { params }: { params: { taskId: 
     }
 
     const supabase = getSupabaseAdminClient()
-    // const { taskId } = await params
-    // const taskId = params.taskId
     const resolvedParams = await params
     const taskId = resolvedParams.taskId
-   //debugger;
-    
-    console.log("[v0] Fetching task here is the black sheep:", taskId)
 
     // Query the task directly without trying to join non-existent relationships
     const { data: task, error } = await supabase
@@ -53,10 +46,7 @@ export async function GET(request: NextRequest, { params }: { params: { taskId: 
       .eq("id", taskId)
       .maybeSingle()
 
-    console.log("[v0] Task fetch result:", { task, error, taskId })
-
     if (error || !task) {
-      console.log("[v0] Task not found error:", error)
       return NextResponse.json({ error: "Task not found", details: error?.message || "No task exists for this id" }, { status: 404 })
     }
 
@@ -83,7 +73,7 @@ export async function GET(request: NextRequest, { params }: { params: { taskId: 
 }
 
 // PATCH - Update a task
-export async function PATCH(request: NextRequest, { params }: { params: { taskId: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ taskId: string }> }) {
   try {
     const authHeader = request.headers.get("authorization")
     if (!authHeader) {
@@ -99,8 +89,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { taskId
 
     const body = await request.json()
     const supabase = getSupabaseAdminClient()
-    //const taskId = params.taskId
-     const resolvedParams = await params
+    const resolvedParams = await params
     const taskId = resolvedParams.taskId
 
     // Get current task to compare changes
