@@ -66,8 +66,8 @@ const primaryNav = [
 
 const myTasksSubmenu = [
   {
-    id: "daily-report",
-    name: "Daily Report",
+    id: "daily-work",
+    name: "Daily Work",
     icon: Clock,
     href: "/daily-report",
   },
