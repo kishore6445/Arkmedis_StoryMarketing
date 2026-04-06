@@ -33,6 +33,7 @@ import {
   List,
   ChevronDown,
   Workflow,
+  Clock,
 } from "lucide-react"
 
 const primaryNav = [
@@ -64,6 +65,12 @@ const primaryNav = [
 ]
 
 const myTasksSubmenu = [
+  {
+    id: "daily-report",
+    name: "Daily Report",
+    icon: Clock,
+    href: "/daily-report",
+  },
   {
     id: "meetings",
     name: "Meetings",
