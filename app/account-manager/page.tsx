@@ -27,6 +27,11 @@ export default function AccountManagerPage() {
   const [selectedSprintId, setSelectedSprintId] = useState<string | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [editingSprintId, setEditingSprintId] = useState<string | null>(null)
+  const [editingSprintName, setEditingSprintName] = useState("")
+  const [editingSprintStart, setEditingSprintStart] = useState("")
+  const [editingSprintEnd, setEditingSprintEnd] = useState("")
+  const [isSubmittingSprintEdit, setIsSubmittingSprintEdit] = useState(false)
 
   // Fetch stats from API with both client and sprint filters
   const { data: statsData } = useSWR(
@@ -109,6 +114,50 @@ export default function AccountManagerPage() {
     router.push(`/tasks/${task.id}`)
   }
 
+  const handleSprintEditRequested = (sprintId: string) => {
+    const sprint = sprints.find(s => s.id === sprintId)
+    if (sprint) {
+      setEditingSprintId(sprintId)
+      setEditingSprintName(sprint.name)
+      setEditingSprintStart(sprint.start_date)
+      setEditingSprintEnd(sprint.end_date)
+    }
+  }
+
+  const handleSaveSprintEdit = async () => {
+    if (!editingSprintId || !editingSprintName.trim()) return
+
+    setIsSubmittingSprintEdit(true)
+    try {
+      const token = localStorage.getItem("sessionToken")
+      const response = await fetch(`/api/account-manager/sprints/${editingSprintId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: editingSprintName,
+          startDate: editingSprintStart,
+          endDate: editingSprintEnd,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        handleSprintUpdated(data.sprint)
+        setEditingSprintId(null)
+        setEditingSprintName("")
+        setEditingSprintStart("")
+        setEditingSprintEnd("")
+      }
+    } catch (error) {
+      console.error("[v0] Error saving sprint:", error)
+    } finally {
+      setIsSubmittingSprintEdit(false)
+    }
+  }
+
   const handleSaveTask = async (updatedTask: any) => {
     if (!editingTask) return
 
@@ -160,6 +209,7 @@ export default function AccountManagerPage() {
                     onSprintChange={setSelectedSprintId}
                     onSprintUpdated={handleSprintUpdated}
                     onSprintDeleted={handleSprintDeleted}
+                    onEditSprintRequested={handleSprintEditRequested}
                     teamMembers={teamMembers}
                     clientId={selectedClientId}
                   />
@@ -344,6 +394,73 @@ export default function AccountManagerPage() {
                       onSave={handleSaveTask}
                       teamMembers={[]}
                     />
+                  </div>
+                </div>
+              )}
+
+              {/* Sprint Edit Modal */}
+              {editingSprintId && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h2 className="text-lg font-semibold text-[#1D1D1F]">Edit Sprint</h2>
+                        <p className="text-xs text-[#86868B] mt-1">Update sprint details</p>
+                      </div>
+                      <button
+                        onClick={() => setEditingSprintId(null)}
+                        className="p-2 hover:bg-[#F5F5F7] rounded-lg transition-all"
+                      >
+                        <X className="w-5 h-5 text-[#86868B]" />
+                      </button>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-[#1D1D1F] mb-2">Sprint Name</label>
+                        <input
+                          type="text"
+                          value={editingSprintName}
+                          onChange={(e) => setEditingSprintName(e.target.value)}
+                          className="w-full px-3 py-2 border border-[#E5E5E7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007AFF] text-sm"
+                          placeholder="e.g. Sprint 1 - Q1"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium text-[#1D1D1F] mb-2">Start Date</label>
+                          <input
+                            type="date"
+                            value={editingSprintStart}
+                            onChange={(e) => setEditingSprintStart(e.target.value)}
+                            className="w-full px-3 py-2 border border-[#E5E5E7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007AFF] text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-[#1D1D1F] mb-2">End Date</label>
+                          <input
+                            type="date"
+                            value={editingSprintEnd}
+                            onChange={(e) => setEditingSprintEnd(e.target.value)}
+                            className="w-full px-3 py-2 border border-[#E5E5E7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007AFF] text-sm"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-3 pt-2">
+                        <button
+                          onClick={handleSaveSprintEdit}
+                          disabled={!editingSprintName.trim() || isSubmittingSprintEdit}
+                          className="flex-1 px-4 py-2 bg-[#007AFF] text-white rounded-lg hover:opacity-90 disabled:opacity-50 font-medium text-sm transition-all"
+                        >
+                          {isSubmittingSprintEdit ? "Saving..." : "Save"}
+                        </button>
+                        <button
+                          onClick={() => setEditingSprintId(null)}
+                          className="px-4 py-2 bg-[#F5F5F7] text-[#1D1D1F] rounded-lg hover:bg-[#E5E5E7] font-medium text-sm transition-all"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}

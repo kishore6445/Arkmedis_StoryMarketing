@@ -345,6 +345,13 @@ export function TaskKanban({ tasks, onTaskStatusChange, isLoading, onTaskUpdate,
                                 {task.taskId || task.id.slice(0, 6).toUpperCase()}
                               </div>
 
+                              {/* Client Name - Clear identifier */}
+                              {task.clientName && (
+                                <div className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                  {task.clientName}
+                                </div>
+                              )}
+
                               {/* Task Title - Primary focus */}
                               <h4 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">
                                 {task.title}
@@ -443,6 +450,11 @@ export function TaskKanban({ tasks, onTaskStatusChange, isLoading, onTaskUpdate,
                     <div className="text-xs font-medium text-green-700 uppercase tracking-wide mb-1">
                       {task.taskId || task.id.slice(0, 6).toUpperCase()}
                     </div>
+                    {task.clientName && (
+                      <div className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded mb-2">
+                        {task.clientName}
+                      </div>
+                    )}
                     <h4 className="text-sm font-medium text-gray-800 line-clamp-2 leading-snug group-hover:text-gray-900">
                       {task.title}
                     </h4>
