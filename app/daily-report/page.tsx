@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2, Send, Calendar, Clock, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { QuickAddFromTimer } from "@/components/quick-add-from-timer"
-import { getTodaysTotalHours } from "@/lib/timer-service"
+import { getTodaysTotalHours, getTodaysSessions, formatTime } from "@/lib/timer-service"
 import { BreadcrumbTrail } from "@/components/breadcrumb-trail"
 
 interface TimeEntry {
@@ -78,13 +78,16 @@ export default function DailyReportPage() {
   })
 
   const [trackedHours, setTrackedHours] = useState(0)
+  const [todaySessions, setTodaySessions] = useState<any[]>([])
 
-  // Update tracked hours on mount and when date changes
+  // Update tracked hours and sessions on mount and when date changes
   useEffect(() => {
     if (currentDate === new Date().toISOString().split("T")[0]) {
       setTrackedHours(getTodaysTotalHours())
+      setTodaySessions(getTodaysSessions())
     } else {
       setTrackedHours(0)
+      setTodaySessions([])
     }
   }, [currentDate])
 
@@ -307,6 +310,52 @@ export default function DailyReportPage() {
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-6 py-8">
+        {/* Pomodoro Tracked Sessions - Reference Section */}
+        {currentDate === new Date().toISOString().split("T")[0] && todaySessions.length > 0 && (
+          <div className="mb-8 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-green-900">Pomodoro Sessions Today</h3>
+                <p className="text-sm text-green-700 mt-1">Reference tracked time to assist report submission</p>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-black text-green-600">{trackedHours.toFixed(1)}h</div>
+                <p className="text-xs text-green-600 font-medium">{todaySessions.length} sessions tracked</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
+              {todaySessions.slice(0, 3).map((session, idx) => (
+                <div key={session.id} className="bg-white rounded-lg p-3 border border-green-100 hover:border-green-300 transition-colors">
+                  <div className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-1">Session {idx + 1}</div>
+                  <div className="text-sm font-mono font-bold text-gray-800">{formatTime(session.duration)}</div>
+                  <p className="text-xs text-gray-600 mt-1">{session.taskTitle}</p>
+                  <div className="text-xs text-gray-500 mt-1">
+                    <span className="inline-block bg-blue-50 px-2 py-0.5 rounded text-blue-700">{session.clientName}</span>
+                  </div>
+                </div>
+              ))}
+              {todaySessions.length > 3 && (
+                <div className="bg-white rounded-lg p-3 border border-green-100 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-2xl font-black text-green-600">+{todaySessions.length - 3}</div>
+                    <p className="text-xs text-gray-600 mt-1">More sessions</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-green-600 flex items-center gap-1">
+                <span>💡</span> Use these tracked sessions as a reference when filling your time entries
+              </p>
+              <div className="text-right">
+                <div className="text-sm font-mono font-bold text-green-700">{trackedHours.toFixed(2)}h total</div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form Column */}
           <div className="lg:col-span-1">
