@@ -11,9 +11,11 @@ const ClientContext = createContext<ClientContextType | undefined>(undefined)
 
 export function ClientProvider({ children }: { children: ReactNode }) {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
+  const [isHydrated, setIsHydrated] = useState(false)
 
-  // Store in localStorage for persistence
+  // Only run on client side after hydration
   useEffect(() => {
+    setIsHydrated(true)
     const stored = localStorage.getItem('selectedClientId')
     if (stored) {
       setSelectedClientId(stored)
@@ -21,12 +23,13 @@ export function ClientProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
+    if (!isHydrated) return
     if (selectedClientId) {
       localStorage.setItem('selectedClientId', selectedClientId)
     } else {
       localStorage.removeItem('selectedClientId')
     }
-  }, [selectedClientId])
+  }, [selectedClientId, isHydrated])
 
   return (
     <ClientContext.Provider value={{ selectedClientId, setSelectedClientId }}>
