@@ -75,8 +75,10 @@ function DashboardContentInner() {
 
 export default function DashboardContent() {
   return (
-    <AuthGuard>
-      <DashboardContentInner />
-    </AuthGuard>
+    // <AuthGuard>
+    //   <DashboardContentInner />
+    // </AuthGuard>
+
+    <DashboardContentInner />
   )
 }
