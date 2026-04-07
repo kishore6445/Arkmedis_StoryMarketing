@@ -7,6 +7,10 @@ import { ContentClientPipeline } from "@/components/content-client-pipeline"
 import { ContentCalendarView } from "@/components/content-calendar-view"
 import ContentVisibilityTable from "@/components/content-visibility-table"
 import AddContentModal from "@/components/add-content-modal-cv"
+import { CommandCenterSummary } from "@/components/command-center-summary"
+import { BottleneckInsightRow } from "@/components/bottleneck-insight-row"
+import { ClientSnapshotRow } from "@/components/client-snapshot-row"
+import { ContentPipelineFlow } from "@/components/content-pipeline-flow"
 import type { ContentRecordListItem } from "@/lib/content-records"
 
 // Get current month
@@ -149,6 +153,65 @@ export default function ContentVisibilityPage() {
     { planned: 0, scheduled: 0, published: 0 }
   )
 
+  // Calculate insights for bottleneck detection
+  const generateInsights = () => {
+    const insights = []
+    const targetCount = totals.planned // Using planned as the target
+    const productionDone = totals.scheduled - totals.published
+    
+    // Shortfall check
+    if (targetCount > 0 && totals.published < Math.floor(targetCount * 0.7)) {
+      const gap = targetCount - totals.published
+      insights.push({
+        type: "shortfall" as const,
+        message: `${gap} more posts needed to hit target`,
+        count: gap,
+        severity: gap > Math.floor(targetCount * 0.5) ? "high" : "medium",
+      })
+    }
+
+    // Production lag
+    if (totals.planned > 0 && totals.scheduled < Math.floor(totals.planned * 0.5)) {
+      const lag = totals.planned - totals.scheduled
+      insights.push({
+        type: "production_lag" as const,
+        message: `${lag} posts not yet scheduled`,
+        count: lag,
+        severity: lag > Math.floor(totals.planned * 0.3) ? "high" : "medium",
+      })
+    }
+
+    // Publishing lag
+    if (totals.scheduled > totals.published) {
+      const lag = totals.scheduled - totals.published
+      insights.push({
+        type: "publishing_lag" as const,
+        message: `${lag} scheduled posts pending publication`,
+        count: lag,
+        severity: lag > 5 ? "high" : "low",
+      })
+    }
+
+    return insights
+  }
+
+  // Generate client snapshots for "All Clients" view
+  const generateClientSnapshots = () => {
+    if (selectedClient !== "All Clients") return []
+    
+    return displayClients.slice(0, 5).map((client) => ({
+      id: client.id,
+      name: client.name,
+      published: client.published,
+      target: client.planned,
+      status: client.published >= Math.floor(client.planned * 0.7) 
+        ? "on-track" 
+        : client.published >= Math.floor(client.planned * 0.4) 
+        ? "needs-attention" 
+        : "at-risk",
+    }))
+  }
+
   return (
     <div className="w-full max-w-7xl">
       {/* Header */}
@@ -235,9 +298,34 @@ export default function ContentVisibilityPage() {
       {/* Tab Content */}
       {activeTab === "pipeline" && (
         <div className="space-y-8">
-          {/* Overview Stats */}
+          {/* Command Center Summary - New Premium Redesign */}
+          <CommandCenterSummary
+            target={totals.planned}
+            productionDone={totals.scheduled - totals.published + totals.published}
+            scheduled={totals.scheduled}
+            published={totals.published}
+            clientName={selectedClient === "All Clients" ? `All Clients - ${selectedMonth.charAt(0).toUpperCase() + selectedMonth.slice(1)}` : selectedClient}
+          />
+
+          {/* Content Pipeline Flow Visualization - New */}
+          <ContentPipelineFlow
+            target={totals.planned}
+            productionDone={totals.scheduled - totals.published}
+            scheduled={totals.scheduled}
+            published={totals.published}
+          />
+
+          {/* Bottleneck Insights - New */}
+          <BottleneckInsightRow insights={generateInsights()} />
+
+          {/* Client Snapshots - Only show when All Clients selected - New */}
+          {selectedClient === "All Clients" && (
+            <ClientSnapshotRow clients={generateClientSnapshots()} />
+          )}
+
+          {/* Original Pipeline Overview Stats - Kept for backward compatibility */}
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-            <h3 className="font-semibold text-gray-900 mb-4">Overview</h3>
+            <h3 className="font-semibold text-gray-900 mb-4">Pipeline Overview</h3>
             <div className="grid grid-cols-4 gap-6">
               <div>
                 <p className="text-xs text-gray-600 font-medium mb-1">Total Planned</p>
