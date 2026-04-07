@@ -2,8 +2,6 @@
 
 import { useState, Suspense, lazy } from 'react'
 import { AuthGuard } from '@/components/auth-guard'
-import { useAuth } from '@/hooks/use-auth'
-import { useRouter } from 'next/navigation'
 
 // Lazy load all heavy components
 const TopNav = lazy(() => import('@/components/top-nav').then(m => ({ default: m.TopNav })))
@@ -16,16 +14,8 @@ const ContentTrackerPage = lazy(() => import('@/app/content-tracker/page'))
 const ContentVisibilityPage = lazy(() => import('@/app/content-visibility/page'))
 
 function DashboardContentInner() {
-  const { user } = useAuth()
-  const router = useRouter()
   const [currentPhase, setCurrentPhase] = useState('overview')
   const [showAddClientModal, setShowAddClientModal] = useState(false)
-
-  // Redirect clients to their portal
-  if (user?.role === 'client') {
-    router.push('/client-portal')
-    return null
-  }
 
   return (
     <div className="min-h-screen bg-[#FAFBFC]">

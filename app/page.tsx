@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic'
 
 // Dynamically import with ssr: false to prevent server-side data serialization
-const Dashboard = dynamic(() => import('@/components/dashboard-shell'), {
+const Dashboard = dynamic(() => import('@/components/dashboard-content'), {
   ssr: false,
   loading: () => (
     <div className="min-h-screen bg-[#FAFBFC] flex items-center justify-center">
