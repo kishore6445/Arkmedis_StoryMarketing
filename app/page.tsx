@@ -8,27 +8,36 @@ import { Sidebar } from "@/components/sidebar"
 import { useAuth } from "@/hooks/use-auth"
 import { useClient } from "@/contexts/client-context"
 import { useRouter } from "next/navigation"
-import { DashboardHome } from "@/components/dashboard-home"
 import { AddClientModal } from "@/components/add-client-modal"
 import { ManageClientsSection } from "@/components/manage-clients-section"
-import { TrendingUp, Target } from "lucide-react"
 
-// Lazy load heavy components
-const JourneyTimeline = lazy(() => import("@/components/journey-timeline").then(m => ({ default: m.JourneyTimeline })))
-const CurrentPhaseCard = lazy(() => import("@/components/current-phase-card").then(m => ({ default: m.CurrentPhaseCard })))
-const TodaysFocus = lazy(() => import("@/components/todays-focus").then(m => ({ default: m.TodaysFocus })))
-const AnalyticsDashboard = lazy(() => import("@/components/analytics-dashboard").then(m => ({ default: m.AnalyticsDashboard })))
-const ActivityFeed = lazy(() => import("@/components/activity-feed").then(m => ({ default: m.ActivityFeed })))
-const WorkflowDashboard = lazy(() => import("@/components/workflow-dashboard").then(m => ({ default: m.WorkflowDashboard })))
-const ContentVisibilityPage = lazy(() => import("@/app/content-visibility/page"))
-const ContentTrackerPage = lazy(() => import("@/app/content-tracker/page"))
+// Lazy load all data-heavy components
+const DashboardHome = lazy(() => import("@/components/dashboard-home").then(m => ({ default: m.DashboardHome })))
 const MeetingsPage = lazy(() => import("@/app/meetings/page"))
+const ContentTrackerPage = lazy(() => import("@/app/content-tracker/page"))
+const ContentVisibilityPage = lazy(() => import("@/app/content-visibility/page"))
 
 const clientsFetcher = (url: string) => {
   const token = localStorage.getItem("sessionToken")
   return fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   }).then((res) => res.json())
+}
+
+function EmptyDashboard() {
+  return (
+    <div className="space-y-8">
+      <div className="space-y-2">
+        <h1 className="text-4xl font-semibold text-foreground tracking-tight">Dashboard</h1>
+        <p className="text-base text-muted-foreground">Loading your overview...</p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-24 bg-gray-100 rounded-lg animate-pulse" />
+        ))}
+      </div>
+    </div>
+  )
 }
 
 function LoadingFallback() {
@@ -43,10 +52,8 @@ export default function DashboardPage() {
   const { user } = useAuth()
   const router = useRouter()
   const { selectedClientId, setSelectedClientId } = useClient()
-  const [currentPhase, setCurrentPhase] = useState("my-tasks")
+  const [currentPhase, setCurrentPhase] = useState("overview")
   const [showAddClientModal, setShowAddClientModal] = useState(false)
-  const [showClientDetail, setShowClientDetail] = useState(false)
-  const [showPostComposer, setShowPostComposer] = useState(false)
   const [clients, setClients] = useState([] as any[])
   
   // Redirect clients to their portal
@@ -124,20 +131,19 @@ export default function DashboardPage() {
   return (
     <AuthGuard>
       <div className="min-h-screen bg-[#FAFBFC]">
-        <TopNav hideClientSelector={currentPhase === "my-tasks"} />
+        <TopNav hideClientSelector={currentPhase === "overview"} />
         <div className="flex">
           <Sidebar currentPhase={currentPhase} onPhaseChange={setCurrentPhase} />
           <main className="flex-1 ml-64 transition-all duration-300 mt-16 p-8 [@media(max-width:768px)]:ml-20">
             <div className="max-w-7xl mx-auto space-y-8">
               {currentPhase === "overview" && (
-                <DashboardHome
-                  clients={clients}
-                  selectedClientId={selectedClientId}
-                  onClientSelect={(clientId) => {
-                    setSelectedClientId(clientId)
-                    setShowClientDetail(true)
-                  }}
-                />
+                <Suspense fallback={<EmptyDashboard />}>
+                  <DashboardHome
+                    clients={clients}
+                    selectedClientId={selectedClientId}
+                    onClientSelect={setSelectedClientId}
+                  />
+                </Suspense>
               )}
               
               {currentPhase === "meetings" && (
@@ -169,4 +175,5 @@ export default function DashboardPage() {
       </div>
     </AuthGuard>
   )
+}
 }
