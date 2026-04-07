@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/db"
+import { getSupabaseAdminClient } from "@/lib/db"
 import { getUserFromRequest } from "@/lib/auth"
 
 // PUT /api/campaigns/[id] - Update campaign
@@ -28,7 +28,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (campaign_type !== undefined) updates.campaign_type = campaign_type
     if (platform !== undefined) updates.platform = platform
 
-    const { data: campaign, error } = await supabase
+    const { data: campaign, error } = await getSupabaseAdminClient()
       .from("campaigns")
       .update(updates)
       .eq("id", id)
@@ -63,7 +63,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     const { id } = await params
 
-    const { error } = await supabase
+    const { error } = await getSupabaseAdminClient()
       .from("campaigns")
       .delete()
       .eq("id", id)

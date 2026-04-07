@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/db"
+import { getSupabaseAdminClient } from "@/lib/db"
 import { getUserFromRequest } from "@/lib/auth"
 
 export async function GET(request: NextRequest) {
@@ -28,7 +28,7 @@ let clientIds: string[] = []
 
 // For client role users, get all their associated client IDs
 if (user.role === "client") {
-  const { data: clientData, error: clientError } = await supabase
+  const { data: clientData, error: clientError } = await getSupabaseAdminClient()
     .from("clients")
     .select("id")
     .eq("user_id", user.id)
@@ -57,6 +57,7 @@ if (user.role === "client") {
 
 
     // Fetch campaigns for this client
+    const supabase = getSupabaseAdminClient()
     const { data: campaigns, error: campaignsError } = await supabase
       .from("campaigns")
       .select("*")
@@ -85,7 +86,7 @@ if (user.role === "client") {
     }
 
     // Fetch scheduled posts for this client
-    const { data: scheduledPosts, error: postsError } = await supabase
+    const { data: scheduledPosts, error: postsError } = await getSupabaseAdminClient()
       .from("scheduled_posts")
       .select("*")
       .in("client_id", clientIds)
