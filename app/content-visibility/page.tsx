@@ -197,38 +197,66 @@ export default function ContentVisibilityPage() {
 
   // Generate platform metrics for expandable view
   const generatePlatformMetrics = () => {
-    const PLATFORMS = ["Instagram", "LinkedIn", "YouTube", "Blog", "Facebook", "Email", "TikTok", "Twitter/X", "Website"]
-    
-    // Initialize platform counts
-    const platformCounts: Record<string, { achieved: number; target: number }> = {}
-    PLATFORMS.forEach(platform => {
-      platformCounts[platform] = { achieved: 0, target: 0 }
-    })
+    try {
+      const PLATFORMS = ["Instagram", "LinkedIn", "YouTube", "Blog", "Facebook", "Email", "TikTok", "Twitter/X", "Website"]
+      
+      // Initialize platform counts
+      const platformCounts: Record<string, { achieved: number; target: number }> = {}
+      PLATFORMS.forEach(platform => {
+        platformCounts[platform] = { achieved: 0, target: 0 }
+      })
 
-    // Aggregate platform data from pipelineRecords
-    pipelineRecords.forEach((record) => {
-      const platform = record.platform || "Blog"
-      // Only add to achieved if platform exists in our list
-      if (platformCounts[platform]) {
-        platformCounts[platform].achieved += 1
+      // Aggregate platform data from pipelineRecords
+      if (Array.isArray(pipelineRecords)) {
+        pipelineRecords.forEach((record: any) => {
+          const platform = record?.platform || "Blog"
+          if (platformCounts[platform]) {
+            platformCounts[platform].achieved += 1
+          }
+        })
       }
-    })
 
-    // Calculate targets - divide total planned by number of active platforms
-    const activePlatforms = Object.keys(platformCounts).filter(p => platformCounts[p].achieved > 0 || p === "Blog" || p === "LinkedIn")
-    const targetsPerPlatform = activePlatforms.length > 0 ? Math.ceil(totals.planned / activePlatforms.length) : 0
-    
-    activePlatforms.forEach(platform => {
-      platformCounts[platform].target = targetsPerPlatform
-    })
+      // Calculate targets - divide total planned by number of active platforms
+      const activePlatforms = Object.keys(platformCounts).filter(p => platformCounts[p].achieved > 0)
+      const targetsPerPlatform = activePlatforms.length > 0 ? Math.ceil(totals.planned / activePlatforms.length) : 0
+      
+      activePlatforms.forEach(platform => {
+        platformCounts[platform].target = Math.max(targetsPerPlatform, 1)
+      })
 
-    return PLATFORMS
-      .filter(platform => platformCounts[platform].achieved > 0 || platformCounts[platform].target > 0)
-      .map(platform => ({
-        name: platform,
-        achieved: platformCounts[platform].achieved,
-        target: platformCounts[platform].target,
+      return PLATFORMS
+        .filter(platform => platformCounts[platform].achieved > 0 || platformCounts[platform].target > 0)
+        .map(platform => ({
+          name: platform,
+          achieved: platformCounts[platform].achieved,
+          target: platformCounts[platform].target,
+        }))
+    } catch (error) {
+      console.error("[v0] Error generating platform metrics:", error)
+      return []
+    }
+  }
+
+  // Generate client snapshots for "All Clients" view
+  const generateClientSnapshots = () => {
+    try {
+      if (selectedClient !== "All Clients") return []
+      
+      return displayClients.slice(0, 5).map((client) => ({
+        id: client.id,
+        name: client.name,
+        published: client.published,
+        target: client.planned,
+        status: client.published >= Math.floor(client.planned * 0.7) 
+          ? "on-track" 
+          : client.published >= Math.floor(client.planned * 0.4) 
+          ? "needs-attention" 
+          : "at-risk",
       }))
+    } catch (error) {
+      console.error("[v0] Error generating client snapshots:", error)
+      return []
+    }
   }
 
   return (
