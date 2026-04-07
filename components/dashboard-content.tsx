@@ -9,9 +9,14 @@ const Sidebar = lazy(() => import('@/components/sidebar').then(m => ({ default: 
 const AddClientModal = lazy(() => import('@/components/add-client-modal').then(m => ({ default: m.AddClientModal })))
 const ManageClientsSection = lazy(() => import('@/components/manage-clients-section').then(m => ({ default: m.ManageClientsSection })))
 const DashboardHome = lazy(() => import('@/components/dashboard-home').then(m => ({ default: m.DashboardHome })))
-const MeetingsPage = lazy(() => import('@/app/meetings/page'))
-const ContentTrackerPage = lazy(() => import('@/app/content-tracker/page'))
-const ContentVisibilityPage = lazy(() => import('@/app/content-visibility/page'))
+// const MeetingsPage = lazy(() => import('@/app/meetings/page'))
+// const ContentTrackerPage = lazy(() => import('@/app/content-tracker/page'))
+// const ContentVisibilityPage = lazy(() => import('@/app/content-visibility/page'))
+
+const MeetingsPage = () => <div>Meetings</div>
+const ContentTrackerPage = () => <div>Content Tracker</div>
+const ContentVisibilityPage = () => <div>Content Visibility</div>
+
 
 function DashboardContentInner() {
   const [currentPhase, setCurrentPhase] = useState('overview')
@@ -32,7 +37,7 @@ function DashboardContentInner() {
           <div className="max-w-7xl mx-auto space-y-8">
             {currentPhase === 'overview' && (
               <Suspense fallback={<div className="text-gray-400 text-center py-8">Loading dashboard...</div>}>
-                <DashboardHome clients={[]} selectedClientId="" onClientSelect={() => {}} />
+                <DashboardHome clients={[]} selectedClientId="" onClientSelect={() => { }} />
               </Suspense>
             )}
 
@@ -64,7 +69,7 @@ function DashboardContentInner() {
       </div>
 
       <Suspense fallback={null}>
-        <AddClientModal isOpen={showAddClientModal} onClose={() => setShowAddClientModal(false)} onSubmit={() => {}} />
+        <AddClientModal isOpen={showAddClientModal} onClose={() => setShowAddClientModal(false)} onSubmit={() => { }} />
       </Suspense>
     </div>
   )
