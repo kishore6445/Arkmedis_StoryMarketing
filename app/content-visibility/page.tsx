@@ -205,25 +205,25 @@ export default function ContentVisibilityPage() {
       platformCounts[platform] = { achieved: 0, target: 0 }
     })
 
-    // Aggregate platform data from all clients
-    displayClients.forEach(client => {
-      client.records?.forEach((record: any) => {
-        const platform = record.platform || "Blog"
-        if (platformCounts[platform]) {
-          platformCounts[platform].achieved += 1
-        }
-      })
+    // Aggregate platform data from pipelineRecords
+    pipelineRecords.forEach((record) => {
+      const platform = record.platform || "Blog"
+      // Only add to achieved if platform exists in our list
+      if (platformCounts[platform]) {
+        platformCounts[platform].achieved += 1
+      }
     })
 
-    // Get targets from the database or set defaults
-    PLATFORMS.forEach(platform => {
-      // For now, set target based on planned posts or use a reasonable default
-      const platformTarget = Math.ceil(totals.planned / PLATFORMS.length) + Math.floor(Math.random() * 3)
-      platformCounts[platform].target = platformTarget
+    // Calculate targets - divide total planned by number of active platforms
+    const activePlatforms = Object.keys(platformCounts).filter(p => platformCounts[p].achieved > 0 || p === "Blog" || p === "LinkedIn")
+    const targetsPerPlatform = activePlatforms.length > 0 ? Math.ceil(totals.planned / activePlatforms.length) : 0
+    
+    activePlatforms.forEach(platform => {
+      platformCounts[platform].target = targetsPerPlatform
     })
 
     return PLATFORMS
-      .filter(platform => platformCounts[platform].target > 0 || platformCounts[platform].achieved > 0)
+      .filter(platform => platformCounts[platform].achieved > 0 || platformCounts[platform].target > 0)
       .map(platform => ({
         name: platform,
         achieved: platformCounts[platform].achieved,
