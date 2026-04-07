@@ -25,15 +25,8 @@ export default function LoginPage() {
     if (!result.success) {
       setError(result.error || 'Login failed')
       setLoading(false)
-    } else {
-      // Redirect based on user role
-      const userRole = result.user?.role || 'user'
-      if (userRole === 'client') {
-        router.push('/client-portal')
-      } else {
-        router.push('/')
-      }
     }
+    // On success, useAuth's login() already calls router.push('/') internally
   }
 
   return (
