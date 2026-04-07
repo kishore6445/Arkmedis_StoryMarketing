@@ -1,6 +1,7 @@
 "use client"
 
 import { CheckCircle2 } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 
 interface ClientSnapshot {
@@ -16,6 +17,8 @@ interface ClientSnapshotRowProps {
 }
 
 export function ClientSnapshotRow({ clients }: ClientSnapshotRowProps) {
+  const router = useRouter()
+
   if (clients.length === 0) {
     return null
   }
@@ -33,9 +36,10 @@ export function ClientSnapshotRow({ clients }: ClientSnapshotRowProps) {
             if (client.status === "at-risk") statusDot = "bg-red-500"
 
             return (
-              <div
+              <button
                 key={client.id}
-                className="flex-shrink-0 w-64 bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                onClick={() => router.push(`/content-visibility/client/${client.id}`)}
+                className="flex-shrink-0 w-64 bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-gray-300 transition-all text-left"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
@@ -57,7 +61,7 @@ export function ClientSnapshotRow({ clients }: ClientSnapshotRowProps) {
                 <p className="text-xs text-gray-600">
                   {Math.round(progress)}% complete
                 </p>
-              </div>
+              </button>
             )
           })}
         </div>

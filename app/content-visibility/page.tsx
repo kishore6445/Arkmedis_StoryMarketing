@@ -207,9 +207,9 @@ export default function ContentVisibilityPage() {
       })
 
       // Aggregate platform data from pipelineRecords
-      if (Array.isArray(pipelineRecords)) {
+      if (Array.isArray(pipelineRecords) && pipelineRecords.length > 0) {
         pipelineRecords.forEach((record: any) => {
-          const platform = record?.platform || "Blog"
+          const platform = (record?.platform && record.platform.trim()) ? record.platform : "Blog"
           if (platformCounts[platform]) {
             platformCounts[platform].achieved += 1
           }
@@ -218,19 +218,24 @@ export default function ContentVisibilityPage() {
 
       // Calculate targets - divide total planned by number of active platforms
       const activePlatforms = Object.keys(platformCounts).filter(p => platformCounts[p].achieved > 0)
-      const targetsPerPlatform = activePlatforms.length > 0 ? Math.ceil(totals.planned / activePlatforms.length) : 0
+      
+      if (activePlatforms.length === 0) {
+        return []
+      }
+
+      const targetsPerPlatform = Math.ceil(totals.planned / activePlatforms.length)
       
       activePlatforms.forEach(platform => {
         platformCounts[platform].target = Math.max(targetsPerPlatform, 1)
       })
 
-      return PLATFORMS
-        .filter(platform => platformCounts[platform].achieved > 0 || platformCounts[platform].target > 0)
+      return activePlatforms
         .map(platform => ({
           name: platform,
           achieved: platformCounts[platform].achieved,
           target: platformCounts[platform].target,
         }))
+        .sort((a, b) => b.achieved - a.achieved) // Sort by achieved count descending
     } catch (error) {
       console.error("[v0] Error generating platform metrics:", error)
       return []
