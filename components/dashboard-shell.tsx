@@ -2,8 +2,9 @@
 
 import dynamic from 'next/dynamic'
 
-// Dynamically import with ssr: false to prevent server-side data serialization
-const Dashboard = dynamic(() => import('@/components/dashboard-shell'), {
+// Dynamically import DashboardContent with no SSR
+// This ensures NO server-side rendering, preventing data serialization
+const DashboardContent = dynamic(() => import('@/components/dashboard-content'), {
   ssr: false,
   loading: () => (
     <div className="min-h-screen bg-[#FAFBFC] flex items-center justify-center">
@@ -15,6 +16,6 @@ const Dashboard = dynamic(() => import('@/components/dashboard-shell'), {
   ),
 })
 
-export default function DashboardPage() {
-  return <Dashboard />
+export default function DashboardShell() {
+  return <DashboardContent />
 }
