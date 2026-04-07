@@ -3,7 +3,7 @@ import { getSupabaseAdminClient } from "@/lib/db"
 import { validateSession } from "@/lib/auth"
 
 // GET - Fetch all subtasks for a task
-export async function GET(request: NextRequest, { params }: { params: { taskId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ taskId: string }> }) {
   try {
     const authHeader = request.headers.get("authorization")
     if (!authHeader) {
@@ -17,7 +17,8 @@ export async function GET(request: NextRequest, { params }: { params: { taskId: 
     }
 
     const supabase = getSupabaseAdminClient()
-    const taskId = params.taskId
+    const resolvedParams = await params
+    const taskId = resolvedParams.taskId
 
     const { data: subtasks, error } = await supabase
       .from("task_subtasks")
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest, { params }: { params: { taskId: 
 }
 
 // POST - Create a subtask
-export async function POST(request: NextRequest, { params }: { params: { taskId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ taskId: string }> }) {
   try {
     const authHeader = request.headers.get("authorization")
     if (!authHeader) {
@@ -82,7 +83,8 @@ export async function POST(request: NextRequest, { params }: { params: { taskId:
 
     const body = await request.json()
     const { title, assignee_id, due_date } = body
-    const taskId = params.taskId
+    const resolvedParams = await params
+    const taskId = resolvedParams.taskId
 
     if (!title || !title.trim()) {
       return NextResponse.json({ error: "Subtask title is required" }, { status: 400 })

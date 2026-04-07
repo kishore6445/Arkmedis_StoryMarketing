@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/db"
+import { getSupabaseAdminClient } from "@/lib/db"
 import { getUserFromRequest } from "@/lib/auth"
 
 // GET /api/campaigns - Fetch all campaigns
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { data: campaigns, error } = await supabase
+    const { data: campaigns, error } = await getSupabaseAdminClient()
       .from("campaigns")
       .select(`
         *,
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Campaign name is required" }, { status: 400 })
     }
 
-    const { data: campaign, error } = await supabase
+    const { data: campaign, error } = await getSupabaseAdminClient()
       .from("campaigns")
       .insert({
         client_id: client_id || null,

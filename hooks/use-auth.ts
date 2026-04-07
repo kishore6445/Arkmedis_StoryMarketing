@@ -107,7 +107,7 @@ export function useAuth() {
 
       console.log('[v0] Auth state updated, redirecting to /')
       router.push('/')
-      return { success: true }
+      return { success: true, user: data.user }
     } catch (error: any) {
       console.error('[v0] Login error:', error)
       return { success: false, error: error.message }

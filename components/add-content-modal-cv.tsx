@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 import { X, Upload } from "lucide-react"
 import { CONTENT_STATUS_OPTIONS, type ContentRecordFormValues } from "@/lib/content-records"
+import { TargetProgressIndicator } from "./target-progress-indicator"
+import type { Platform } from "@/lib/platform-targets-service"
 
 interface AddContentModalProps {
   onClose: () => void
@@ -334,7 +336,20 @@ export default function AddContentModal({ onClose, onSuccess, initialData }: Add
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
+          </div>
 
+          {/* Target Progress Indicator - New */}
+          {formData.clientId && formData.platform && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <TargetProgressIndicator
+                clientId={formData.clientId}
+                platform={formData.platform as Platform}
+                currentCount={1}
+              />
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
             {/* Owner */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Owner *</label>

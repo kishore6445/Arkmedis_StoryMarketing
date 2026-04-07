@@ -12,9 +12,9 @@ interface ClientUser {
 }
 
 interface AddClientModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onSubmit: (clientData: { name: string; description: string; brandColor?: string; userId?: string }) => void
+  isOpen?: boolean
+  onClose?: () => void
+  onSubmit?: (clientData: { name: string; description: string; brandColor?: string; userId?: string }) => void
   clientUsers: ClientUser[]
 }
 

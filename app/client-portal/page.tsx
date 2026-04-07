@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { AuthGuard } from "@/components/auth-guard"
 import { RoleBasedLayout } from "@/components/role-based-layout"
+import { BreadcrumbTrail } from "@/components/breadcrumb-trail"
 import { CheckCircle2, Circle, Clock, AlertCircle } from "lucide-react"
 import { ClientReportCard } from "@/components/client-report-card"
 interface PortalData {
@@ -108,6 +109,12 @@ export default function ClientPortalPage() {
   return (
     <AuthGuard>
       <RoleBasedLayout userRole="client">
+        <BreadcrumbTrail
+          items={[
+            { label: "Home", onClick: () => window.location.href = "/" },
+            { label: "Client Portal", active: true },
+          ]}
+        />
         <div className="space-y-8">
           {/* Welcome Header */}
           <div>

@@ -1,7 +1,7 @@
 // Authentication utilities - configure when you add a database integration
 // This demonstrates the auth flow that will be implemented
 
-import * as bcrypt from "bcrypt";
+import * as bcrypt from "bcryptjs";
 
 const SALT_ROUNDS = 10;
 

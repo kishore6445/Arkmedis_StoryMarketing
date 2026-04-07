@@ -8,6 +8,7 @@ import { MeetingsScheduleForm } from "@/components/meetings-schedule-form"
 import { MeetingsList } from "@/components/meetings-list"
 import { MeetingsDetailsPanel } from "@/components/meetings-details-panel"
 import { MeetingsMomCard } from "@/components/meetings-mom-card"
+import { BreadcrumbTrail } from "@/components/breadcrumb-trail"
 
 interface Meeting {
   id: string
@@ -53,6 +54,13 @@ export default function MeetingsPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Breadcrumbs */}
+      <BreadcrumbTrail
+        items={[
+          { label: "Home", onClick: () => window.location.href = "/" },
+          { label: "Meetings", active: true },
+        ]}
+      />
       {/* Header */}
       <div className="border-b border-gray-200 px-8 py-6">
         <div className="flex items-center justify-between">
