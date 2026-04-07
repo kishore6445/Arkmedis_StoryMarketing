@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronLeft, ChevronRight, Edit2, Trash2, Merge2, Plus, Send, Calendar, CheckCircle2, AlertCircle } from "lucide-react"
+import { ChevronLeft, ChevronRight, Edit2, Trash2, Merge, Plus, Send, Calendar, CheckCircle2, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface TimeEntry {
@@ -184,7 +184,7 @@ export default function DailyReportRedesigned() {
 
                     <textarea
                       value={entry.description}
-                      onChange={() => {}}
+                      onChange={() => { }}
                       className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                       rows={2}
                     />
@@ -195,7 +195,7 @@ export default function DailyReportRedesigned() {
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button className="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition-colors" title="Merge">
-                          <Merge2 className="w-4 h-4" />
+                          <Merge className="w-4 h-4" />
                         </button>
                       </div>
                       <button
