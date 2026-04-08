@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getSupabaseAdminClient } from "@/lib/db"
+import { supabase } from "@/lib/db"
 import { getUserFromRequest } from "@/lib/auth"
 
 export async function GET(request: NextRequest) {
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
 
     const campaignId = request.nextUrl.searchParams.get("campaign_id")
 
-    let query = getSupabaseAdminClient()
+    let query = supabase
       .from("campaign_metrics")
       .select("*")
       .order("date", { ascending: false })
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "campaign_id and date are required" }, { status: 400 })
     }
 
-    const { data: metric, error } = await getSupabaseAdminClient()
+    const { data: metric, error } = await supabase
       .from("campaign_metrics")
       .insert({
         campaign_id,

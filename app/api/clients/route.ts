@@ -17,28 +17,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Invalid session" }, { status: 401 })
     }
 
-    const page = Math.max(1, parseInt(request.nextUrl.searchParams.get("page") || "1", 10))
-    const limit = Math.min(50, parseInt(request.nextUrl.searchParams.get("limit") || "20", 10))
-    const offset = (page - 1) * limit
-
     const supabase = getSupabaseAdminClient()
-    const { data: clients, error, count } = await supabase
+    const { data: clients, error } = await supabase
       .from('clients')
-      .select('id, name, brand_color, created_at', { count: "exact" })
+      .select('*')
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
 
     if (error) {
       console.error("[v0] Error fetching clients:", error)
       return NextResponse.json({ error: "Failed to fetch clients" }, { status: 500 })
     }
 
-    return NextResponse.json({ 
-      clients,
-      total: count || 0,
-      page,
-      limit,
-    })
+    return NextResponse.json({ clients })
   } catch (error) {
     console.error("[v0] Error fetching clients:", error)
     return NextResponse.json({ error: "Failed to fetch clients" }, { status: 500 })

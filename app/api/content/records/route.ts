@@ -25,19 +25,14 @@ export async function GET(request: NextRequest) {
     const week = request.nextUrl.searchParams.get("week")
     const search = request.nextUrl.searchParams.get("search")
     const viewMode = request.nextUrl.searchParams.get("viewMode") || "all"
-    const page = Math.max(1, parseInt(request.nextUrl.searchParams.get("page") || "1", 10))
-    const limit = Math.min(50, parseInt(request.nextUrl.searchParams.get("limit") || "20", 10))
-    const offset = (page - 1) * limit
 
-    console.log("[v0] Fetching content records:", { clientId, clientName, status, month, week, viewMode, page, limit })
+    console.log("[v0] Fetching content records:", { clientId, clientName, status, month, week, viewMode })
 
-    // Select only necessary columns to reduce payload
     let query = supabase
       .from("content_records")
-      .select("id, client_id, owner_id, title, content_type, platform, planned_date, scheduled_date, published_date, status, planning_month, planning_week, notes, created_at, updated_at", { count: "exact" })
+      .select("*")
       .order("scheduled_date", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1)
 
     if (clientId) {
       query = query.eq("client_id", clientId)
@@ -55,7 +50,7 @@ export async function GET(request: NextRequest) {
       query = query.eq("status", normalizeStatus(status))
     }
 
-    const { data: records, error, count } = await query
+    const { data: records, error } = await query
 
     if (error) {
       console.error("[v0] Error fetching content records:", error)
@@ -98,6 +93,10 @@ export async function GET(request: NextRequest) {
         month: record.planning_month || "",
         week: record.planning_week || "",
         notes: record.notes || "",
+        attachmentUrl: record.attachment_url || "",
+        attachmentName: record.attachment_name || "",
+        attachmentType: record.attachment_type || "",
+        attachmentSize: record.attachment_size || 0,
         createdAt: record.created_at,
         updatedAt: record.updated_at,
       }))
@@ -113,9 +112,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       records: transformedRecords,
-      total: count || transformedRecords.length,
-      page,
-      limit,
+      total: transformedRecords.length,
       viewMode,
     })
   } catch (error) {

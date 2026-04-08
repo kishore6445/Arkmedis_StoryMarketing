@@ -22,11 +22,8 @@ export function getSupabaseClient() {
   return supabaseClient
 }
 
-// Lazy getter — do NOT call getSupabaseClient() at module load time as it throws
-// if env vars are missing, which crashes every API route that imports this file.
-export function getSupabase() {
-  return getSupabaseClient()
-}
+// Export supabase as a named export for convenience
+export const supabase = getSupabaseClient()
 
 export function getSupabaseAdminClient() {
   if (!supabaseAdminClient) {

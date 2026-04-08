@@ -40,12 +40,8 @@ export function TopNav({
   const [showSaveFilter, setShowSaveFilter] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
 
-  // Load clients data asynchronously without blocking render
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchClients()
-    }, 100)
-    return () => clearTimeout(timer)
+    fetchClients()
   }, [])
 
   const fetchClients = async () => {
